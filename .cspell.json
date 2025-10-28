@@ -1,0 +1,20 @@
+{
+   "language": "en",
+   "enableGlobDot": true,
+   "ignorePaths": [
+      ".git",
+      ".gitignore",
+      ".vscode",
+      "node_modules"
+   ],
+   "dictionaryDefinitions": [
+      {
+         "name": "project-words",
+         "description": "Custom game words.",
+         "path": "./custom-words.txt"
+      }
+   ],
+   "dictionaries": [
+      "project-words"
+   ]
+}
