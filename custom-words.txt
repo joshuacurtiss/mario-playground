@@ -1,1 +1,6 @@
+anims
+Aseprite
+gameover
 kaplay
+lakitu
+motobug
