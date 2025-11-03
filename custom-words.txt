@@ -1,6 +1,15 @@
 anims
 Aseprite
+flac
 gameover
 kaplay
 lakitu
+lerp
 motobug
+pjump
+powerup
+prun
+prunning
+RGBA
+steamapps
+swimidle
