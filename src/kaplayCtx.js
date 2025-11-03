@@ -1,19 +1,37 @@
 import kaplay from "kaplay";
 
+const params = new URLSearchParams(window.location.search);
+export const debug = params.has('debug');
+
 const k = kaplay({
-   width: 1920,
-   height: 1080,
+   width: 1280,
+   height: 720,
    letterbox: true,
    background: [0, 0, 0],
    global: false,
    buttons: {
+      left: {
+         keyboard: ['a', 'left'],
+      },
+      right: {
+         keyboard: ['d', 'right'],
+      },
+      up: {
+         keyboard: ['w', 'up'],
+      },
+      down: {
+         keyboard: ['s', 'down'],
+      },
+      turbo: {
+         keyboard: ['shift'],
+      },
       jump: {
-         keyboard: ['space'],
-         mouse: 'left',
+         keyboard: ['space', 'z', 'control'],
       },
    },
-   touchToMouse: true,
-   debug: false,
+   touchToMouse: false,
+   debugKey: '`',
+   debug,
 });
 
 export default k;
