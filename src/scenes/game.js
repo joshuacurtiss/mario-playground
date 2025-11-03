@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k, { debug } from '../kaplayCtx';
 import { makePlayer } from '../entities/player';
 
 const scale=4;
@@ -6,7 +6,6 @@ const spriteSize=16;
 
 export default function() {
    k.setGravity(3100);
-   const player = makePlayer('mario');
    // Ground
    for( let i=0 ; i<k.width()/scale/spriteSize ; i++ ) {
       k.add([
@@ -27,6 +26,15 @@ export default function() {
       k.area(),
       k.body({ isStatic: true }),
    ]);
+   const playerDebugText = debug ? k.add([
+      k.text('', { size: 16, width: k.width()/2, lineSpacing: 3 }),
+      k.anchor('topleft'),
+      k.pos(10, 50),
+      k.opacity(0.4),
+   ]) : null;
+   const player = makePlayer(k.vec2(k.randi(50, k.width()-50), k.height()-96), {
+      debugText: playerDebugText,
+   });
    k.onUpdate(() => {
       if (player.isOffScreen()) {
          if (player.pos.x<0) player.moveTo(k.width(), player.pos.y);
