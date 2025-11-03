@@ -3,10 +3,10 @@ import k from '../kaplayCtx';
 export default function variableJump(jumpButton = 'jump', breakSpeed = 120) {
    let jumping = false;
    return {
-      variableJump() {
+      variableJump(force) {
          if (this.isGrounded()) {
             jumping = true;
-            this.jump();
+            this.jump(force);
          }
       },
       endVariableJump() {
