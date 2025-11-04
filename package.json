@@ -4,9 +4,14 @@
    "version": "0.0.0",
    "type": "module",
    "scripts": {
-      "dev": "vite",
-      "build": "vite build",
-      "preview": "vite preview"
+      "clean": "rimraf dist public/assets/sfx",
+      "dev": "npm run prebuild && vite",
+      "pack": "npm run pack:sprites && npm run pack:audio",
+      "pack:audio": "node build/packAudio",
+      "pack:sprites": "./build/packSprites.sh",
+      "prebuild": "npm run pack:audio",
+      "build": "npm run prebuild && vite build",
+      "preview": "npm run prebuild && vite preview"
    },
    "devDependencies": {
       "fluent-ffmpeg": "2.1.3",
