@@ -12,6 +12,8 @@ export function makePlayer(pos, options = optionDefaults) {
    const prunThreshold = 1.2;
    const speeds = { walk: 350, turbo: 600, prun: 700, inc: 32 };
    const jumpForces = { sm: 1300, lg: 1350 };
+   const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
+   const runSound = k.play('p-meter', { paused: true, loop: true });
    let runTime = 0;
    let momentum = 0;
    return k.add([
@@ -26,9 +28,10 @@ export function makePlayer(pos, options = optionDefaults) {
       {
          add() {
             k.onButtonPress('jump', ()=>{
-               // if (this.isGrounded()) k.play('jump', { volume: 0.5 });
-               const anim = `${this.curAnim().startsWith('run') ? 'pjump' : 'jump'}-${size}`;
+               if (!this.isGrounded()) return;
+               const anim = `${this.curAnim()?.startsWith('run') ? 'pjump' : 'jump'}-${size}`;
                if (this.hasAnim(anim)) this.play(anim);
+               k.play('jump');
                // Implement jump force based on momentum and run state
                let jumpForce = jumpForces[size];
                if (k.isButtonDown('turbo') && momentum) jumpForce *= 1.1;
@@ -54,6 +57,11 @@ export function makePlayer(pos, options = optionDefaults) {
                // Check for p-run
                const prunning = goTurbo && goLeftOrRight && runTime>=prunThreshold;
                const maxSpeed = prunning ? speeds.prun : goTurbo ? speeds.turbo : speeds.walk;
+               // Play sound effects
+               if (prunning && runSound.paused) runSound.play();
+               else if (!prunning && !runSound.paused) runSound.stop();
+               if (skidding && this.isGrounded() && skidSound.paused) skidSound.play();
+               else if (!skidding && !skidSound.paused) skidSound.stop();
                // Handle momentum build up and decay
                if (!goLeftOrRight) {
                   // Decay momentum
