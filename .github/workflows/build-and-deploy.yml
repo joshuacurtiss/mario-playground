@@ -30,6 +30,7 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
+      - uses: FedericoCarboni/setup-ffmpeg@v3
       - name: Install dependencies
         run: npm install
       - name: Build
