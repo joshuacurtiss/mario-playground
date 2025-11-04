@@ -9,6 +9,8 @@
       "preview": "vite preview"
    },
    "devDependencies": {
+      "fluent-ffmpeg": "2.1.3",
+      "rimraf": "6.1.0",
       "vite": "7.1.12"
    },
    "dependencies": {
