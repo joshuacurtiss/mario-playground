@@ -1,10 +1,20 @@
 import k from "./kaplayCtx";
 import game from "./scenes/game";
 
-// Sprites
-k.loadAseprite('items', 'assets/sprites/items.png', 'assets/sprites/items.json');
-k.loadAseprite('mario-normal', 'assets/sprites/chars-mario-normal.png', 'assets/sprites/chars-mario-normal.json');
-k.loadAseprite('mario-tan', 'assets/sprites/chars-mario-tan.png', 'assets/sprites/chars-mario-tan.json');
+// Sprite Items
+[ 'items', 'enemies' ].forEach(name => {
+   k.loadAseprite(name, `assets/sprites/${name}.png`, `assets/sprites/${name}.json`);
+});
+
+// Sprite Characters
+[ 'mario-normal', 'mario-tan', 'mario-fire', 'mario-raccoon' ].forEach(name => {
+   k.loadAseprite(name, `assets/sprites/chars-${name}.png`, `assets/sprites/chars-${name}.json`);
+});
+
+// Backgrounds
+[ 'bg-clouds', 'bg-grassland' ].forEach(name => {
+   k.loadSprite(name, `assets/${name.replace('bg-', 'bg/')}.png`);
+});
 
 // Audio
 [
