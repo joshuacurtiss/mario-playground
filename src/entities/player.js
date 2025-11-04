@@ -89,7 +89,7 @@ export function makePlayer(pos, options = optionDefaults) {
                   if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
                } else if (this.isGrounded()) {
                   if (goDown) this.play(anim);
-                  else if (goUp && this.hasAnim(`lookup-${size}`)) this.play(`lookup-${size}`);
+                  else if (goUp && this.hasAnim(`lookup-${size}`) && !char.includes('raccoon')) this.play(`lookup-${size}`);
                   else this.frame = size==='sm' ? 0: 19;
                }
                // Debug text display
