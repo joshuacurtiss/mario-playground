@@ -2,7 +2,7 @@ import k from "../kaplayCtx";
 import variableJump from "../abilities/variable-jump";
 
 const optionDefaults = {
-   char: 'mario',
+   char: 'mario-normal',
    debugText: null,
    size: 'sm',
 };
