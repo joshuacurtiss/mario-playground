@@ -1,5 +1,6 @@
 import k, { debug } from '../kaplayCtx';
 import { makePlayer } from '../entities/player';
+import { makeGoomba } from '../entities/goomba';
 
 const scale=4;
 const spriteSize=16;
@@ -68,9 +69,22 @@ export default function() {
       k.color(0, 0, 0),
    ]) : null;
    // Player
-   const player = makePlayer(k.vec2(k.randi(halfWidth/2, halfWidth), fullHeight-96), {
+   const player = makePlayer(k.vec2(k.randi(25, 150), 0), {
       debugText: playerDebugText,
    });
+   // Enemies
+   function spawnGoomba() {
+      if (k.get('goomba').length < 20) {
+         makeGoomba(k.vec2(k.randi(halfWidth, fullWidth), 0), {
+            char: k.randi() ? 'goomba' : 'goombared',
+            boundaryLeft: 225,
+            boundaryRight: 2775,
+            dir: k.randi() ? -1 : 1,
+         });
+      }
+      k.wait(k.rand(1.5, 3), spawnGoomba);
+   }
+   k.wait(2, spawnGoomba);
    // All camera zooming in debug mode
    if (debug) {
       k.onKeyPress('escape', () => {
@@ -92,6 +106,8 @@ export default function() {
    }
    // Updates
    k.onUpdate(() => {
+      // Disable camera movement if player is not alive
+      if (!player.isAlive) return;
       // Keep player within the edges. If we need to adjust, stop here.
       // The rest is camera work which will be affected by this change anyway.
       if (player.pos.x<ground.pos.x) {
@@ -107,7 +123,7 @@ export default function() {
          return;
       }
       // Figure out camera destination, centered on player.
-      let camDest = k.getCamPos().lerp(k.vec2(player.pos.x, player.pos.y<0 ? halfHeight+player.pos.y-player.height : player.pos.y>ground.pos.y ? player.pos.y : halfHeight), 0.08);
+      let camDest = k.getCamPos().lerp(k.vec2(player.pos.x, player.pos.y<0 ? halfHeight+player.pos.y-player.height : player.pos.y>ground.pos.y+25 ? player.pos.y : halfHeight), 0.08);
       // Do not let camera go beyond ground edges
       if (camDest.x-halfWidth < ground.pos.x) camDest.x = ground.pos.x+halfWidth;
       if (camDest.x+halfWidth > ground.pos.x+ground.width) camDest.x = ground.pos.x+ground.width-halfWidth;
