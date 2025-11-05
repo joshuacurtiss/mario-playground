@@ -14,6 +14,7 @@ export function makePlayer(pos, options = optionDefaults) {
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
+   let lastPos = pos.clone();
    let runTime = 0;
    let momentum = 0;
    return k.add([
@@ -47,9 +48,11 @@ export function makePlayer(pos, options = optionDefaults) {
                const goLeftOrRight = goLeft || goRight;
                const goTurbo = k.isButtonDown('turbo');
                const skidding = (goLeft && momentum>0) || (goRight && momentum<0);
+               const lastPosDelta = Math.round(this.pos.dist(lastPos));
+               const moving = lastPosDelta>0;
                // If running, track run time. You don't get credit while jumping.
                let runtimeMultiplier = goTurbo && goLeftOrRight && !skidding && this.isGrounded() ? 1 : -1.2;
-               if (skidding) runtimeMultiplier = -4; // Take runtime credits away faster when skidding
+               if (skidding || !moving) runtimeMultiplier = -4; // Take runtime credits away faster when skidding
                if (!this.isGrounded() && runTime===prunThreshold) runtimeMultiplier = 0; // Hold p-run state while in air
                runTime += k.dt() * runtimeMultiplier;
                if (runTime<0) runTime = 0;
@@ -81,6 +84,7 @@ export function makePlayer(pos, options = optionDefaults) {
                if (goDown && this.hasAnim(`duck-${size}`)) anim = `duck-${size}`;
                const animSpeed = Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2);
                // Actually apply calculations to the characters
+               lastPos = this.pos.clone();
                if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
                if (momentum) {
                   this.flipX = momentum>0;
@@ -95,7 +99,7 @@ export function makePlayer(pos, options = optionDefaults) {
                // Debug text display
                if (debugText) {
                   debugText.text = `Character: ${char} (${size})\n`+
-                     `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)}\n`+
+                     `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
                      `Momentum: ${momentum}\n`+
                      `Run Time: ${runTime.toFixed(2)}s\n`+
                      `P-Running: ${prunning}\n`+
