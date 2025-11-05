@@ -73,6 +73,12 @@ export default function() {
    });
    // All camera zooming in debug mode
    if (debug) {
+      k.onKeyPress('escape', () => {
+         k.debug.paused = !k.debug.paused;
+      });
+      k.onKeyPress('tab', () => {
+         if (k.debug.paused) k.debug.stepFrame();
+      });
       k.onKeyPress('-', () => {
          if (k.getCamScale().x <= 0.11) return;
          k.setCamScale(k.getCamScale().sub(0.1));
