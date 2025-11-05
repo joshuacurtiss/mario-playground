@@ -1,7 +1,12 @@
 anims
 Aseprite
+botleft
+botright
 flac
 gameover
+goomba
+goombared
+goombas
 kaplay
 lakitu
 lerp
@@ -11,5 +16,6 @@ powerup
 prun
 prunning
 RGBA
+spacebar
 steamapps
 swimidle
