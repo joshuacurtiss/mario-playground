@@ -4,10 +4,8 @@ export default function variableJump(jumpButton = 'jump', breakSpeed = 120) {
    let jumping = false;
    return {
       variableJump(force) {
-         if (this.isGrounded()) {
-            jumping = true;
-            this.jump(force);
-         }
+         jumping = true;
+         this.jump(force);
       },
       endVariableJump() {
          jumping = false;
