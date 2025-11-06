@@ -38,6 +38,11 @@ export function makeGoomba(pos, options = optionDefaults) {
                if (this.pos.x<boundaryLeft && dir<0) dir = 1;
                if (this.pos.x>boundaryRight && dir>0) dir = -1;
             });
+            this.onBeforePhysicsResolve(col=>{
+               if (!alive || frozen) return;
+               // Ignore collision with other enemies when they fall on top of each other.
+               if (col.target.is('enemy') && col.isBottom()) col.preventResolution();
+            });
             this.onCollideUpdate((obj, col)=>{
                if (!alive || frozen || obj.is('player')) return;
                if ((col.isLeft() && dir<0) || (col.isRight() && dir>0)) dir *= -1;
