@@ -1,4 +1,5 @@
 import k, { debug } from '../kaplayCtx';
+import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makePlayer } from '../entities/player';
 import { makeGoomba } from '../entities/goomba';
 
@@ -13,6 +14,8 @@ const halfHeight = fullHeight/2;
 
 export default function() {
    k.setGravity(3100);
+   // Fade in
+   makeFadeIn();
    // Ground
    for( let i=0 ; i<landSpriteCount ; i++ ) {
       k.add([
@@ -71,6 +74,10 @@ export default function() {
    // Player
    const player = makePlayer(k.vec2(k.randi(25, 150), 0), {
       debugText: playerDebugText,
+   });
+   player.on('die', () => {
+      // Fade to black and go home
+      k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
    });
    // Enemies
    function spawnGoomba() {

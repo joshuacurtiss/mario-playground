@@ -1,5 +1,6 @@
 import k from "./kaplayCtx";
 import game from "./scenes/game";
+import home from "./scenes/home";
 
 // Sprite Items
 [ 'items', 'enemies' ].forEach(name => {
@@ -26,6 +27,7 @@ import game from "./scenes/game";
 });
 
 // Scenes
+k.scene('home', home);
 k.scene('game', game);
 
-k.go('game');
+k.go('home');
