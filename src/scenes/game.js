@@ -104,6 +104,21 @@ export default function() {
          k.debug.log('Cam Scale:', k.getCamScale().x.toFixed(1));
       });
    }
+   // Cheat codes
+   let keyLog = '';
+   k.onKeyPress((key) => {
+      keyLog = keyLog.slice(-20) + key;
+      if (keyLog.endsWith('invulnerable')) {
+         player.isInvulnerable = !player.isInvulnerable;
+         k.debug.log(`Invulnerability is ${player.isInvulnerable ? 'ACTIVATED!' : 'off.'}`);
+      } else if (keyLog.endsWith('hurt')) {
+         player.hurt();
+         k.debug.log('If you say so... OW!');
+      } else if (keyLog.endsWith('grow')) {
+         player.grow();
+         k.debug.log('It\'s great to be BIG!');
+      }
+   });
    // Updates
    k.onUpdate(() => {
       // Disable camera movement if player is not alive
