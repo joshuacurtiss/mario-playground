@@ -139,6 +139,11 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.handleCollideEnemy(col.target, col);
                }
             });
+            this.onCollide('coin', (coin, col)=>{
+               col.preventResolution();
+               // TODO: Eventually add to player score
+               coin.collect();
+            });
             this.onUpdate(()=>{
                // Don't process if dead
                if (!alive) return;
