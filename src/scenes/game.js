@@ -1,5 +1,6 @@
 import k, { debug } from '../kaplayCtx';
 import { makeFadeIn, makeFadeOut } from '../ui/fader';
+import { makeCoin } from '../items/coin';
 import { makePlayer } from '../entities/player';
 import { makeGoomba } from '../entities/goomba';
 
@@ -22,6 +23,7 @@ export default function() {
          k.sprite('items', { anim: 'grass' }),
          k.scale(scale),
          k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*2),
+         'ground',
       ]);
    }
    const ground = k.add([
@@ -31,6 +33,7 @@ export default function() {
       k.pos(0, k.height()-spriteSize*scale*2+4),
       k.area(),
       k.body({ isStatic: true }),
+      'ground',
    ]);
    // Clouds
    const clouds = k.add([
@@ -78,6 +81,21 @@ export default function() {
    player.on('die', () => {
       // Fade to black and go home
       k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
+   });
+   // Coins
+   function spawnCoinCluster(pos, count) {
+      const type = k.randi() ? 'gold' : 'blue';
+      for (let i=0; i<count; i++) {
+         const speed = k.rand(1300, 5000);
+         const vel = k.vec2(k.rand(-1, 1), k.rand(0.25, 1)).scale(speed);
+         makeCoin(pos, { type, hasBody: true, velocity: vel, expire: 7 });
+      }
+   }
+   for (let i=0; i<17; i++) {
+      makeCoin(k.vec2(350*scale + i*16*scale, (i%2===0 ? 36 : 52)*scale));
+   }
+   k.on('die', 'goomba', (goomba)=>{
+      k.wait(0.5, ()=>spawnCoinCluster(goomba.pos.sub(0,50), k.randi(8, 20)));
    });
    // Enemies
    function spawnGoomba() {
