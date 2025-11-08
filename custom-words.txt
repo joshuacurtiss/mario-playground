@@ -2,6 +2,9 @@ anims
 Aseprite
 botleft
 botright
+brickbreak
+coinexp
+coinpop
 flac
 gameover
 goomba
@@ -13,9 +16,11 @@ lerp
 motobug
 pjump
 powerup
+powerups
 prun
 prunning
 RGBA
 spacebar
 steamapps
 swimidle
+tanooki
