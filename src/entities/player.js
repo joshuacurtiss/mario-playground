@@ -8,7 +8,7 @@ const optionDefaults = {
 };
 
 export function makePlayer(pos, options = optionDefaults) {
-   let { char, size, debugText } = Object.assign({}, optionDefaults, options);
+   let { char: _char, size: _size, debugText } = Object.assign({}, optionDefaults, options);
    const prunThreshold = 1.2;
    const speeds = { walk: 350, turbo: 600, prun: 700, inc: 32 };
    const jumpForces = { sm: 1300, lg: 1350 };
@@ -21,10 +21,10 @@ export function makePlayer(pos, options = optionDefaults) {
    let runTime = 0;
    let momentum = 0;
    function makePlayerAreaRect() {
-      return size === 'sm' ? new k.Rect(k.vec2(0, 0), 10, 15) : new k.Rect(k.vec2(0, 0), 13, 27);
+      return _size === 'sm' ? new k.Rect(k.vec2(0, 0), 10, 15) : new k.Rect(k.vec2(0, 0), 13, 27);
    }
    return k.add([
-      k.sprite(char, { frame: 0, flipX: true }),
+      k.sprite(_char, { frame: 0, flipX: true }),
       k.scale(4),
       k.area({ shape: makePlayerAreaRect() }),
       k.anchor('bot'),
@@ -36,7 +36,7 @@ export function makePlayer(pos, options = optionDefaults) {
       'player',
       {
          die() {
-            if (size!=='sm' || !alive || invulnerable) return;
+            if (_size!=='sm' || !alive || invulnerable) return;
             this.trigger('die');
             this.isStatic = true;
             this.vel = k.vec2(0, 0);
@@ -46,13 +46,31 @@ export function makePlayer(pos, options = optionDefaults) {
             runSound.stop();
             skidSound.stop();
             k.play('die');
-            this.play(`die-${size}`);
+            this.play(`die-${_size}`);
             this.opacity = 1;
             this.scaleBy(1.2);
             k.wait(2.6, () => {
                this.isStatic = false;
                this.jump(jumpForces.lg);
             });
+         },
+         get size() {
+            return _size;
+         },
+         set size(val) {
+            // Do not set to small if character can't be small
+            if (val==='sm' && !_char.endsWith('normal')) return;
+            _size = val;
+            this.area.shape = makePlayerAreaRect();
+         },
+         get char() {
+            return _char;
+         },
+         set char(val) {
+            _char = val;
+            this.sprite = _char;
+            // Only 'normal' chars can be small
+            if (!_char.endsWith('normal') && _size==='sm') this.size = 'lg';
          },
          get isAlive() {
             return alive;
@@ -64,7 +82,7 @@ export function makePlayer(pos, options = optionDefaults) {
             invulnerable = val;
          },
          grow() {
-            if (size==='lg' || !alive || frozen) return;
+            if (_size==='lg' || !alive || frozen) return;
             frozen = true;
             const vel = this.vel.clone();
             this.isStatic = true;
@@ -73,17 +91,16 @@ export function makePlayer(pos, options = optionDefaults) {
             this.play('grow', { speed: 20 });
             k.wait(1, ()=>{
                this.stop();
-               size = 'lg';
                this.isStatic = false;
                frozen = false;
                this.vel = vel.scale(1.1);
-               this.area.shape = makePlayerAreaRect();
+               this.size = 'lg';
             });
          },
          hurt() {
             if (invulnerable) return;
             this.trigger('hurt');
-            if (size==='sm') {
+            if (_size==='sm') {
                this.die();
                return;
             }
@@ -97,10 +114,9 @@ export function makePlayer(pos, options = optionDefaults) {
             // TODO: Animation does not play if play is touched by enemy when not moving.
             this.play('grow', { speed: 20 });
             k.wait(0.7, ()=>{
-               size = 'sm';
                this.isStatic = false;
+               this.size = 'sm';
                this.vel = vel.scale(0.9);
-               this.area.shape = makePlayerAreaRect();
                frozen = false;
             });
          },
@@ -113,7 +129,7 @@ export function makePlayer(pos, options = optionDefaults) {
                // We wait a tick to bounce in case we squash multiple enemies in one frame
                k.wait(0, ()=>{
                   if (this.isJumping()) return;
-                  this.variableJump(jumpForces[size]*1.1);
+                  this.variableJump(jumpForces[_size]*1.1);
                });
             } else if (!invulnerable) {
                enemy.freeze(0.7);
@@ -123,11 +139,11 @@ export function makePlayer(pos, options = optionDefaults) {
          add() {
             k.onButtonPress('jump', ()=>{
                if (!this.isGrounded() || !alive || frozen) return;
-               const anim = `${this.curAnim()?.startsWith('run') ? 'pjump' : 'jump'}-${size}`;
+               const anim = `${this.curAnim()?.startsWith('run') ? 'pjump' : 'jump'}-${_size}`;
                if (this.hasAnim(anim)) this.play(anim);
                k.play('jump');
                // Implement jump force based on momentum and run state
-               let jumpForce = jumpForces[size];
+               let jumpForce = jumpForces[_size];
                if (k.isButtonDown('turbo') && momentum) jumpForce *= 1.1;
                if (runTime>=prunThreshold) jumpForce *= 1.1;
                this.variableJump(jumpForce);
@@ -196,8 +212,8 @@ export function makePlayer(pos, options = optionDefaults) {
                   // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
                   if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
                }
-               let anim = `${skidding ? 'skid' : prunning ? 'run' : moving ? 'walk' : 'idle'}-${size}`;
-               if (goDown && this.hasAnim(`duck-${size}`)) anim = `duck-${size}`;
+               let anim = `${skidding ? 'skid' : prunning ? 'run' : moving ? 'walk' : 'idle'}-${_size}`;
+               if (goDown && this.hasAnim(`duck-${_size}`)) anim = `duck-${_size}`;
                const animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
                // Actually apply calculations to the characters
                lastPos = this.pos.clone();
@@ -207,14 +223,14 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.move(momentum, 0);
                   if (this.isGrounded() && this.hasAnim(anim) && this.curAnim()!==anim) this.play(anim);
                } else if (this.isGrounded()) {
-                  if (goUp && this.hasAnim(`lookup-${size}`) && !char.includes('raccoon')) this.play(`lookup-${size}`);
+                  if (goUp && this.hasAnim(`lookup-${_size}`) && !_char.includes('raccoon')) this.play(`lookup-${_size}`);
                   else this.play(anim);
                } else if (this.isFalling()) {
-                  this.play(`jump-${size}`);
+                  this.play(`jump-${_size}`);
                }
                // Debug text display
                if (debugText) {
-                  debugText.text = `Character: ${char} (${size})\n`+
+                  debugText.text = `Character: ${this.char} (${_size})\n`+
                      `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
                      `Momentum: ${momentum}\n`+
                      `Run Time: ${runTime.toFixed(2)}s\n`+
