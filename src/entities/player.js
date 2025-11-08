@@ -82,12 +82,13 @@ export function makePlayer(pos, options = optionDefaults) {
             invulnerable = val;
          },
          grow() {
-            if (_size==='lg' || !alive || frozen) return;
+            if (!alive || frozen) return;
+            k.play('powerup');
+            if (_size==='lg') return;
             frozen = true;
             const vel = this.vel.clone();
             this.isStatic = true;
             this.vel = k.vec2(0, 0);
-            k.play('powerup');
             this.play('grow', { speed: 20 });
             k.wait(1, ()=>{
                this.stop();
@@ -159,6 +160,17 @@ export function makePlayer(pos, options = optionDefaults) {
                col.preventResolution();
                // TODO: Eventually add to player score
                coin.collect();
+            });
+            this.onCollide('powerup', (powerup, col)=>{
+               col.preventResolution();
+               if (!powerup.isRevealed) return;
+               if (powerup.type === 'mushroom') {
+                  this.grow();
+               } else if (powerup.type === '1up') {
+                  // TODO: Handle 1up life
+                  k.play('1up');
+               }
+               k.destroy(powerup);
             });
             this.onUpdate(()=>{
                // Don't process if dead
