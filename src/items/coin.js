@@ -1,4 +1,5 @@
 import k from '../kaplayCtx';
+import { makeCoinPop } from '../items/coinpop'
 
 const bodyOptionDefaults = {
    gravityScale: 0.75,
@@ -43,9 +44,13 @@ export function makeCoin(pos, options = {}) {
          if (expiringSoon) obj.opacity = k.wave(0.2, 0.8, k.time() * 75);
       });
    }
-   // Handle body and velocity
+   // Handle body, velocity, headbutting
    if (hasBody) {
       obj.use(k.body(bodyOptions));
+      obj.onHeadbutted(()=>{
+         makeCoinPop(obj.pos, { type, reveal: true });
+         obj.collect();
+      });
       const bounce = (_, col) => {
          if (!hasBody) return;
          if (col.normal.x) obj.vel = obj.vel.scale(-0.85, 1);
