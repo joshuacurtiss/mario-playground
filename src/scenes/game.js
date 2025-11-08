@@ -3,10 +3,14 @@ import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makeCoin } from '../items/coin';
 import { makePlayer } from '../entities/player';
 import { makeGoomba } from '../entities/goomba';
+import { makeCoinPop } from '../items/coinpop';
+import { makeBlock } from '../items/block';
+import { makeBrick } from '../items/brick';
+import { makePowerup } from '../items/powerup';
 
 const scale=4;
 const spriteSize=16;
-const landSpriteCount = 50;
+const landSpriteCount = 49;
 
 const fullWidth = k.width();
 const fullHeight = k.height();
@@ -95,12 +99,35 @@ export default function() {
       makeCoin(k.vec2(350*scale + i*16*scale, (i%2===0 ? 36 : 52)*scale));
    }
    k.on('die', 'goomba', (goomba)=>{
-      k.wait(0.5, ()=>spawnCoinCluster(goomba.pos.sub(0,50), k.randi(8, 20)));
+      k.wait(0.25, ()=>spawnCoinCluster(goomba.pos.sub(0,50), k.randi(8, 20)));
    });
+   // Blocks and Bricks
+   for (let j=0 ; j<3 ; j++ ) {
+      for (let i=0; i<10; i++) {
+         const pos = k.vec2(400+j*896+i*16*scale, ground.pos.y-4*16*scale);
+         if (i%3===0) {
+            if (i===0 || i===9) makeBlock(pos.sub(0, 16*scale));
+            makeBlock(pos);
+         } else {
+            makeBlock(pos, {
+               type: 'question',
+               items: i%3===1 ? Array(8).fill().map(()=>makeCoinPop(pos)) : makePowerup(pos),
+            });
+         }
+      }
+   }
+   [1040, 1936].forEach(deltaX=>{
+      for (let i=0; i<4; i++) {
+         const pos = k.vec2(deltaX+i*16*scale, ground.pos.y-4*16*scale);
+         makeBrick(pos);
+         makeCoin(pos.sub(0, 16*scale), { hasBody: true });
+      }
+   });
+
    // Enemies
    function spawnGoomba() {
       if (k.get('goomba').length < 20) {
-         makeGoomba(k.vec2(k.randi(halfWidth, fullWidth), 0), {
+         makeGoomba(k.vec2(k.randi(600, 2600), 0), {
             char: k.randi() ? 'goomba' : 'goombared',
             boundaryLeft: 225,
             boundaryRight: 2775,
@@ -124,7 +151,7 @@ export default function() {
          k.debug.log('Cam Scale:', k.getCamScale().x.toFixed(1));
       });
       k.onKeyPress('=', () => {
-         if (k.getCamScale().x >= 0.99) return;
+         if (k.getCamScale().x >= 1.95) return;
          k.setCamScale(k.getCamScale().add(0.1));
          k.debug.log('Cam Scale:', k.getCamScale().x.toFixed(1));
       });
@@ -150,12 +177,12 @@ export default function() {
       if (!player.isAlive) return;
       // Keep player within the edges. If we need to adjust, stop here.
       // The rest is camera work which will be affected by this change anyway.
-      if (player.pos.x<ground.pos.x) {
-         player.moveTo(ground.pos.x, player.pos.y);
+      if (player.pos.x<ground.pos.x+20) {
+         player.moveTo(ground.pos.x+20, player.pos.y);
          return;
       }
-      if (player.pos.x>ground.pos.x+ground.width) {
-         player.moveTo(ground.pos.x+ground.width, player.pos.y);
+      if (player.pos.x>ground.pos.x-20+ground.width) {
+         player.moveTo(ground.pos.x-20+ground.width, player.pos.y);
          return;
       }
       if (player.pos.y < -fullHeight*2) {
