@@ -10,7 +10,7 @@ const optionDefaults = {
 export function makePlayer(pos, options = optionDefaults) {
    let { char: _char, size: _size, debugText } = Object.assign({}, optionDefaults, options);
    const prunThreshold = 1.2;
-   const speeds = { walk: 350, turbo: 600, prun: 700, inc: 32 };
+   const speeds = { walk: 350, turbo: 600, prun: 700, inc: 25 };
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
@@ -18,10 +18,15 @@ export function makePlayer(pos, options = optionDefaults) {
    let invulnerable = false;
    let frozen = false;
    let lastPos = pos.clone();
+   let lastPRunCount = 0;
+   let lastPRunning = false;
    let runTime = 0;
    let momentum = 0;
-   function makePlayerAreaRect() {
-      return _size === 'sm' ? new k.Rect(k.vec2(0, 0), 10, 15) : new k.Rect(k.vec2(0, 0), 13, 27);
+   function makePlayerAreaRect(options = {}) {
+      const { ducking } = Object.assign({}, { ducking: false }, options);
+      if (ducking) return new k.Rect(k.vec2(0, 0), 10, 16);
+      if (_size === 'sm') return new k.Rect(k.vec2(0, 0), 10, 15);
+      return new k.Rect(k.vec2(0, 0), 13, 27);
    }
    return k.add([
       k.sprite(_char, { frame: 0, flipX: true }),
@@ -112,7 +117,6 @@ export function makePlayer(pos, options = optionDefaults) {
             this.vel = k.vec2(0, 0);
             k.wait(2.5, ()=>invulnerable = false);
             k.play('hurt');
-            // TODO: Animation does not play if play is touched by enemy when not moving.
             this.play('grow', { speed: 20 });
             k.wait(0.7, ()=>{
                this.isStatic = false;
@@ -140,8 +144,6 @@ export function makePlayer(pos, options = optionDefaults) {
          add() {
             k.onButtonPress('jump', ()=>{
                if (!this.isGrounded() || !alive || frozen) return;
-               const anim = `${this.curAnim()?.startsWith('run') ? 'pjump' : 'jump'}-${_size}`;
-               if (this.hasAnim(anim)) this.play(anim);
                k.play('jump');
                // Implement jump force based on momentum and run state
                let jumpForce = jumpForces[_size];
@@ -185,7 +187,7 @@ export function makePlayer(pos, options = optionDefaults) {
                if (frozen) return;
                // Up/down take priority unless you're mid-jump
                const goUp = this.isGrounded() && k.isButtonDown('up');
-               const goDown = !goUp && this.isGrounded() && k.isButtonDown('down');
+               const goDown = !goUp && k.isButtonDown('down');
                const goRight = !goUp && !goDown && k.isButtonDown('right');
                const goLeft = !goUp && !goDown && !goRight && k.isButtonDown('left');
                const goLeftOrRight = goLeft || goRight;
@@ -203,6 +205,14 @@ export function makePlayer(pos, options = optionDefaults) {
                // Check for p-run
                const prunning = goTurbo && goLeftOrRight && runTime>=prunThreshold;
                const prunCount = Math.ceil(runTime*6 / prunThreshold);
+               if (prunCount!==lastPRunCount) {
+                  lastPRunCount = prunCount;
+                  this.trigger('prunCountChanged', prunCount);
+               }
+               if (prunning !== lastPRunning) {
+                  lastPRunning = prunning;
+                  this.trigger('prunningChanged', prunning);
+               }
                const maxSpeed = prunning ? speeds.prun : goTurbo ? speeds.turbo : speeds.walk;
                // Play sound effects
                if (prunning && runSound.paused) runSound.play();
@@ -213,7 +223,7 @@ export function makePlayer(pos, options = optionDefaults) {
                if (!goLeftOrRight) {
                   // Decay momentum
                   const momentumDir = momentum>0 ? 1 : -1;
-                  momentum -= speeds.inc * momentumDir;
+                  momentum -= speeds.inc*0.8 * momentumDir;
                   // Only slow down to zero, don't reverse when decaying
                   if ((momentumDir>0 && momentum<0) || (momentumDir<0 && momentum>0)) momentum=0;
                } else {
@@ -224,21 +234,27 @@ export function makePlayer(pos, options = optionDefaults) {
                   // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
                   if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
                }
-               let anim = `${skidding ? 'skid' : prunning ? 'run' : moving ? 'walk' : 'idle'}-${_size}`;
-               if (goDown && this.hasAnim(`duck-${_size}`)) anim = `duck-${_size}`;
-               const animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
+               let anim = 'idle';
+               if (prunning && this.isGrounded()) anim = 'run';
+               else if (prunning) anim = 'pjump';
+               else if (this.isFalling() || this.isJumping()) anim = 'jump';
+               else if (skidding) anim = 'skid';
+               else if (goDown) anim = 'duck';
+               else if (moving) anim = 'walk';
+               else if (this.isGrounded() && goUp && !_char.includes('raccoon')) anim = 'lookup';
+               anim += '-' + _size;
                // Actually apply calculations to the characters
                lastPos = this.pos.clone();
+               const animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
                if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
+               if (this.hasAnim(anim) && this.curAnim()!==anim) {
+                  this.play(anim);
+                  // Support changing player area when anim changes.
+                  this.area.shape = makePlayerAreaRect({ ducking: anim.startsWith('duck') });
+               }
                if (momentum) {
                   this.flipX = momentum>0;
                   this.move(momentum, 0);
-                  if (this.isGrounded() && this.hasAnim(anim) && this.curAnim()!==anim) this.play(anim);
-               } else if (this.isGrounded()) {
-                  if (goUp && this.hasAnim(`lookup-${_size}`) && !_char.includes('raccoon')) this.play(`lookup-${_size}`);
-                  else this.play(anim);
-               } else if (this.isFalling()) {
-                  this.play(`jump-${_size}`);
                }
                // Debug text display
                if (debugText) {
