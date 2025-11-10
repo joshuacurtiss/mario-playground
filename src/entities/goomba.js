@@ -28,7 +28,7 @@ export function makeGoomba(pos, options = optionDefaults) {
       k.anchor('bot'),
       k.pos(pos),
       k.body({ jumpForce }),
-      k.offscreen({ distance: 25 }),
+      k.offscreen({ distance: 10000, destroy: true }),
       {
          add() {
             k.onUpdate(()=>{
@@ -45,8 +45,13 @@ export function makeGoomba(pos, options = optionDefaults) {
             });
             this.onCollideUpdate((obj, col)=>{
                if (!alive || frozen || obj.is('player')) return;
-               if ((col.isLeft() && dir<0) || (col.isRight() && dir>0)) dir *= -1;
+               if ((col.isLeft() && dir<0) || (col.isRight() && dir>0)) {
+                  // If a block triggers a collision by just a few pixels vertically, ignore it.
+                  if (obj.is('block-or-brick') && Math.abs(obj.pos.y-this.pos.y) < 10) return;
+                  dir *= -1;
+               }
             });
+            this.onHeadbutted(this.headbutted);
          },
          freeze(duration) {
             if (frozen) return;
@@ -66,6 +71,13 @@ export function makeGoomba(pos, options = optionDefaults) {
          },
          set isAlive(val) {
             alive = val;
+         },
+         headbutted() {
+            this.trigger('die');
+            this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
+            alive = false;
+            this.stop();
+            this.flipY = true;
          },
          squash() {
             this.trigger('die');
