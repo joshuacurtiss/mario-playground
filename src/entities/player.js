@@ -1,5 +1,8 @@
 import k from "../kaplayCtx";
 import variableJump from "../abilities/variable-jump";
+import { coins } from "../abilities/coins";
+import { lives } from "../abilities/lives";
+import { score } from "../abilities/score";
 
 const optionDefaults = {
    char: 'mario-normal',
@@ -37,12 +40,16 @@ export function makePlayer(pos, options = optionDefaults) {
       k.body(),
       k.z(1),
       k.offscreen({ distance: 25 }),
+      coins(),
+      lives(),
+      score(),
       variableJump(),
       'player',
       {
          die() {
-            if (_size!=='sm' || !alive || invulnerable) return;
+            if (!alive || invulnerable) return;
             this.trigger('die');
+            this.size = 'sm'; // Size is always small on death
             this.isStatic = true;
             this.vel = k.vec2(0, 0);
             this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
@@ -125,12 +132,16 @@ export function makePlayer(pos, options = optionDefaults) {
                frozen = false;
             });
          },
+         oneUp() {
+            this.lives += 1;
+            k.play('1up');
+         },
          handleCollideEnemy(enemy, col) {
             if (!alive || frozen || !enemy.isAlive) return;
             // Must hit top part of enemy  with downward velocity to squash
             const thresholdY = enemy.pos.y - enemy.area.shape.pos.y - enemy.area.shape.height / 2;
             if ((this.pos.y <= thresholdY) && this.vel.y > 0) {
-               enemy.squash();
+               enemy.squash(this);
                // We wait a tick to bounce in case we squash multiple enemies in one frame
                k.wait(0, ()=>{
                   if (this.isJumping()) return;
@@ -140,6 +151,11 @@ export function makePlayer(pos, options = optionDefaults) {
                enemy.freeze(0.7);
                this.hurt();
             }
+         },
+         handleCollideCollectible(item, col) {
+            col.preventResolution();
+            if (!this.isAlive) return;
+            this.trigger('collect', item);
          },
          add() {
             k.onButtonPress('jump', ()=>{
@@ -158,22 +174,20 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.handleCollideEnemy(col.target, col);
                }
             });
-            this.onCollide('coin', (coin, col)=>{
-               col.preventResolution();
-               // TODO: Eventually add to player score
-               coin.collect();
-            });
-            this.onCollide('powerup', (powerup, col)=>{
-               col.preventResolution();
-               if (!powerup.isRevealed) return;
-               if (powerup.type === 'mushroom') {
+            this.onCollide('coin', this.handleCollideCollectible);
+            this.onCollide('powerup', this.handleCollideCollectible);
+            this.on('collect', (item)=>{
+               this.score += item.points;
+               if (item.is('coin') || item.is('coinpop')) {
+                  this.coins += 1;
+               } else if (item.type === 'mushroom') {
                   this.grow();
-               } else if (powerup.type === '1up') {
-                  // TODO: Handle 1up life
-                  k.play('1up');
+               } else if (item.type === '1up') {
+                  this.oneUp();
                }
-               k.destroy(powerup);
+               item.collect();
             });
+            this.on('1up', this.oneUp);
             this.onUpdate(()=>{
                // Don't process if dead
                if (!alive) return;
@@ -259,6 +273,9 @@ export function makePlayer(pos, options = optionDefaults) {
                // Debug text display
                if (debugText) {
                   debugText.text = `Character: ${this.char} (${_size})\n`+
+                     `Score: ${this.score}\n`+
+                     `Coins: ${this.coins}\n`+
+                     `Lives: ${this.lives}\n`+
                      `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
                      `Momentum: ${momentum}\n`+
                      `Run Time: ${runTime.toFixed(2)}s\n`+
