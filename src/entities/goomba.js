@@ -1,4 +1,6 @@
 import k from "../kaplayCtx";
+import { makeIndicator } from "../ui/indicator";
+import { points } from '../abilities/points';
 
 const optionDefaults = {
    char: 'goomba',
@@ -7,10 +9,13 @@ const optionDefaults = {
    dir: 1,
    boundaryLeft: 0,
    boundaryRight: 5000,
+   points: 100,
 };
 
 export function makeGoomba(pos, options = optionDefaults) {
-   let { char, boundaryLeft, boundaryRight, dir } = Object.assign({}, optionDefaults, options);
+   const opts = Object.assign({}, optionDefaults, options);
+   const { boundaryLeft, boundaryRight, char } = opts;
+   let { dir } = opts;
    let alive = true;
    const speed = 100;
    const jumpForce = 1200;
@@ -29,6 +34,7 @@ export function makeGoomba(pos, options = optionDefaults) {
       k.pos(pos),
       k.body({ jumpForce }),
       k.offscreen({ distance: 10000, destroy: true }),
+      points(opts.points),
       {
          add() {
             k.onUpdate(()=>{
@@ -72,21 +78,23 @@ export function makeGoomba(pos, options = optionDefaults) {
          set isAlive(val) {
             alive = val;
          },
-         headbutted() {
+         collect() {
             this.trigger('die');
+            this.stop();
             this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
             alive = false;
-            this.stop();
+            if (this.points) makeIndicator(this.pos.sub(0, this.area.shape.height*this.scale.y-this.area.shape.pos.y*this.scale.y), { msg: this.points });
+         },
+         headbutted(player) {
+            if (player) player.trigger('collect', this);
             this.flipY = true;
          },
-         squash() {
-            this.trigger('die');
+         squash(player) {
+            if (player) player.trigger('collect', this);
             this.vel = k.vec2(0, 0);
             this.isStatic = true;
-            this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
-            alive = false;
-            k.play('stomp');
             this.play(`${char}-die`);
+            k.play('stomp');
             k.wait(0.5, () => {
                this.destroy();
             });

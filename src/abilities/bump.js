@@ -18,10 +18,10 @@ export function bump(masterSpeed = k.vec2(0, -12)) {
             // a note block or a brick can be bumped when empty. But a `block-empty` never will.
             if (this.curAnim().endsWith('empty')) return;
             const dir = obj.pos.x < this.pos.x + this.scale.x * this.width / 2 ? 1 : -1;
-            this.bump(masterSpeed, dir);
+            this.bump(masterSpeed, dir, obj);
          });
       },
-      bump(speed = masterSpeed, dir) {
+      bump(speed = masterSpeed, dir, bumper) {
          if (bumping) return; // Already bumping
          let { x, y } = speed;
          // Only single-axis bump, or equal on both axes
@@ -33,12 +33,12 @@ export function bump(masterSpeed = k.vec2(0, -12)) {
          thisBumpSpeed = k.vec2(x, y);
          bumpMove = thisBumpSpeed.clone();
          bumping = true;
-         this.trigger('bump', dir);
+         this.trigger('bump', dir, bumper);
          // If we detect an object on top, it gets a bump
          this.getCollisions().forEach(col=>{
             if (col.normal.y && col.target.is(['powerup', 'player', 'coin', 'enemy'], 'or')) {
                if (col.target.has('body')) col.target.applyImpulse(thisBumpSpeed.scale(60));
-               col.target.trigger('headbutted');
+               col.target.trigger('headbutted', bumper);
             }
          });
       },

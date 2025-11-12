@@ -43,7 +43,7 @@ export function items(items, options = {}) {
       add() {
          if (items) (Array.isArray(items) ? items : [items]).forEach(item=>this.pushItem(item));
          if (this.itemsEmpty) this.trigger('itemsEmpty');
-         this.on('bump', dir=>{
+         this.on('bump', (dir, bumper)=>{
             if (nextItem || revealingItem) return;
             if (this.itemsEmpty) return;
             const item = this.nextItem;
@@ -53,6 +53,7 @@ export function items(items, options = {}) {
             // Coin pops reveal immediately, popups reveal after bump completes
             if (item.is('coinpop')) {
                this.unpackItem(item);
+               bumper.trigger('collect', item);
                item.reveal(item.pos.sub(0, this.height*this.scale.y));
             }
          });
