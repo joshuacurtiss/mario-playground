@@ -1,5 +1,6 @@
 import k from '../kaplayCtx';
 import { makeCoinPop } from '../items/coinpop'
+import { points } from '../abilities/points';
 
 const bodyOptionDefaults = {
    gravityScale: 0.75,
@@ -8,6 +9,7 @@ const bodyOptionDefaults = {
 };
 const optionDefaults = {
    type: 'gold', // 'gold' or 'blue'
+   points: 50,
    hasBody: false,
    velocity: k.vec2(0, 0),
    expire: null,
@@ -16,7 +18,8 @@ const optionDefaults = {
 
 export function makeCoin(pos, options = {}) {
    const bodyOptions = Object.assign({}, bodyOptionDefaults, options.bodyOptions || {})
-   const { type, hasBody, velocity, expire } = Object.assign({}, optionDefaults, options);
+   const opts = Object.assign({}, optionDefaults, options);
+   const { type, hasBody, velocity, expire } = opts;
    let expiringSoon = false;
    const obj = k.add([
       k.sprite('items', { anim: `coin-${type}` }),
@@ -27,6 +30,7 @@ export function makeCoin(pos, options = {}) {
       }),
       k.scale(4),
       k.offscreen({ pause: true, unpause: true }),
+      points(opts.points),
       'coin',
       {
          collect() {
@@ -47,9 +51,9 @@ export function makeCoin(pos, options = {}) {
    // Handle body, velocity, headbutting
    if (hasBody) {
       obj.use(k.body(bodyOptions));
-      obj.onHeadbutted(()=>{
+      obj.onHeadbutted(player=>{
+         if (player) player.trigger('collect', obj);
          makeCoinPop(obj.pos, { type, reveal: true });
-         obj.collect();
       });
       const bounce = (_, col) => {
          if (!hasBody) return;

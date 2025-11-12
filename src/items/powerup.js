@@ -1,12 +1,16 @@
 import k from '../kaplayCtx';
+import { points } from '../abilities/points';
+import { makeIndicator } from '../ui/indicator';
 
 const optionDefaults = {
    type: 'mushroom', // 'mushroom' | 'flower' | 'leaf' | 'frog' | 'hammer' | 'star' | '1up' | 'tanooki'
+   points: 1000, // Points awarded when revealed
    reveal: false, // Whether to reveal immediately upon creation
 };
 
 export function makePowerup(pos, options = {}) {
-   let { type: _type, reveal } = Object.assign({}, optionDefaults, options);
+   const opts = Object.assign({}, optionDefaults, options);
+   let { type: _type } = opts;
    let _dir = k.randi() ? 1 : -1;
    const scale = 4;
    const speed = 200;
@@ -17,6 +21,7 @@ export function makePowerup(pos, options = {}) {
       k.body({ isStatic: true }),
       k.area({ collisionIgnore: [ 'powerup', 'coin', 'coinpop', 'enemy', 'block-or-brick', 'player' ] }),
       k.scale(scale),
+      points(opts.points),
       'powerup',
       `powerup-${_type}`,
       _type,
@@ -46,6 +51,10 @@ export function makePowerup(pos, options = {}) {
             this.gravityScale = 0;
             // We must remove static here so that player can collide with it while it is revealing
             this.isStatic = false;
+         },
+         collect() {
+            makeIndicator(this.pos.sub(0, this.height), this.points);
+            k.destroy(this);
          },
          postReveal() {
             this.untag('revealing');
@@ -90,7 +99,7 @@ export function makePowerup(pos, options = {}) {
             this.onCollide('block-or-brick', handleCollide);
             this.onCollideUpdate('block-or-brick', handleCollide);
             // Reveal immediately if specified
-            if (reveal) this.reveal();
+            if (opts.reveal) this.reveal();
          },
       }
    ]);
