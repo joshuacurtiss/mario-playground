@@ -24,4 +24,5 @@ export default function() {
       k.play('level-enter');
       makeFadeOut({ speed: 1.1, onDone: ()=>k.go('game') });
    });
+   k.go('game');
 }
