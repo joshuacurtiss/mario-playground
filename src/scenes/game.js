@@ -7,8 +7,10 @@ import { makeCoinPop } from '../items/coinpop';
 import { makeBlock } from '../items/block';
 import { makeBrick } from '../items/brick';
 import { makePowerup } from '../items/powerup';
+import { makeHUD } from '../ui/hud';
 
 const scale=4;
+const gameTime=300;
 const spriteSize=16;
 const landSpriteCount = 49;
 
@@ -18,6 +20,7 @@ const halfWidth = fullWidth/2;
 const halfHeight = fullHeight/2;
 
 export default function() {
+   let endTime = Math.ceil(k.time()) + gameTime;
    k.setGravity(3100);
    // Fade in
    makeFadeIn();
@@ -26,15 +29,15 @@ export default function() {
       k.add([
          k.sprite('items', { anim: 'grass' }),
          k.scale(scale),
-         k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*2),
+         k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*3),
          'ground',
       ]);
    }
    const ground = k.add([
-      k.rect(landSpriteCount*spriteSize*scale, spriteSize*scale),
+      k.rect(landSpriteCount*spriteSize*scale, spriteSize/2*scale),
       k.color(0, 0, 0),
       k.z(-101),
-      k.pos(0, k.height()-spriteSize*scale*2+4),
+      k.pos(0, k.height()-spriteSize*scale*3+4),
       k.area(),
       k.body({ isStatic: true }),
       'ground',
@@ -48,8 +51,8 @@ export default function() {
       clouds.add([
          k.sprite('bg-clouds'),
          k.anchor('botleft'),
-         k.scale(4),
-         k.pos(i*256*scale, 230),
+         k.scale(scale),
+         k.pos(i*256*scale, 175),
       ]);
    }
    // Background
@@ -60,8 +63,8 @@ export default function() {
    for (let i=0; i*512*scale<fullWidth*2; i++) {
       bg.add([
          k.sprite('bg-grassland'),
-         k.scale(4),
-         k.pos(i*512*scale, 110),
+         k.scale(scale),
+         k.pos(i*512*scale, 40),
       ]);
    }
    // UI
@@ -78,6 +81,10 @@ export default function() {
       k.pos(10, 50),
       k.color(0, 0, 0),
    ]) : null;
+   const hud = ui.add(makeHUD());
+   hud.world = 1;
+   hud.time = endTime - k.time();
+
    // Player
    const player = makePlayer(k.vec2(k.randi(25, 150), 0), {
       debugText: playerDebugText,
@@ -86,6 +93,15 @@ export default function() {
       // Fade to black and go home
       k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
    });
+   player.on('coinsChanged', newCoins=>hud.coins = newCoins);
+   player.on('livesChanged', newLives=>hud.lives = newLives);
+   player.on('scoreChanged', newScore=>hud.score = newScore);
+   player.on('prunCountChanged', newCount=>hud.pCount = newCount);
+   player.on('prunningChanged', isPrunning=>hud.pDash = isPrunning);
+   hud.player = player.sprite.split('-')[0];
+   hud.lives = player.lives;
+   hud.score = player.score;
+   hud.coins = player.coins;
    // Coins
    function spawnCoinCluster(pos, count) {
       const type = k.randi() ? 'gold' : 'blue';
@@ -104,7 +120,7 @@ export default function() {
    // Blocks and Bricks
    for (let j=0 ; j<3 ; j++ ) {
       for (let i=0; i<10; i++) {
-         const pos = k.vec2(400+j*896+i*16*scale, ground.pos.y-4*16*scale);
+         const pos = k.vec2(400+j*896+i*16*scale, ground.pos.y-3*16*scale);
          if (i%3===0) {
             if (i===0 || i===9) makeBlock(pos.sub(0, 16*scale));
             makeBlock(pos);
@@ -118,7 +134,7 @@ export default function() {
    }
    [1040, 1936].forEach(deltaX=>{
       for (let i=0; i<4; i++) {
-         const pos = k.vec2(deltaX+i*16*scale, ground.pos.y-4*16*scale);
+         const pos = k.vec2(deltaX+i*16*scale, ground.pos.y-3*16*scale);
          makeBrick(pos);
          makeCoin(pos.sub(0, 16*scale), { hasBody: true });
       }
@@ -175,6 +191,29 @@ export default function() {
    k.onUpdate(() => {
       // Disable camera movement if player is not alive
       if (!player.isAlive) return;
+      // Update HUD time
+      hud.time = endTime - k.time();
+      if (hud.time<=0) {
+         k.add([
+            k.sprite('ui-time-up'),
+            k.scale(4),
+            k.pos(halfWidth, fullHeight),
+            k.anchor('top'),
+            k.body({ isStatic: true }),
+            k.fixed(),
+            k.z(200),
+            {
+               add() {
+                  this.vel = k.vec2(0, -2000);
+               },
+               update() {
+                  if (this.pos.y<fullHeight*0.3) this.vel.y = 0;
+               }
+            }
+         ])
+         player.die();
+         return;
+      }
       // Keep player within the edges. If we need to adjust, stop here.
       // The rest is camera work which will be affected by this change anyway.
       if (player.pos.x<ground.pos.x+20) {
