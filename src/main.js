@@ -3,7 +3,7 @@ import game from "./scenes/game";
 import home from "./scenes/home";
 
 // Sprite Items
-[ 'items', 'enemies' ].forEach(name => {
+[ 'items', 'enemies', 'hud-digits', 'hud-items' ].forEach(name => {
    k.loadAseprite(name, `assets/sprites/${name}.png`, `assets/sprites/${name}.json`);
 });
 
@@ -12,9 +12,16 @@ import home from "./scenes/home";
    k.loadAseprite(name, `assets/sprites/chars-${name}.png`, `assets/sprites/chars-${name}.json`);
 });
 
-// Backgrounds
-[ 'bg-clouds', 'bg-grassland' ].forEach(name => {
-   k.loadSprite(name, `assets/${name.replace('bg-', 'bg/')}.png`);
+// Large Sprites
+[
+   'bg-clouds',
+   'bg-grassland',
+   'ui-hud-cards',
+   'ui-hud-dashboard',
+   'ui-hud-items',
+   'ui-time-up',
+].forEach(name => {
+   k.loadSprite(name, `assets/${name.replace('-', '/')}.png`);
 });
 
 // Audio
