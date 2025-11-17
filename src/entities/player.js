@@ -5,13 +5,16 @@ import { lives } from "../abilities/lives";
 import { score } from "../abilities/score";
 
 const optionDefaults = {
-   char: 'mario-normal',
+   char: 'mario',
+   power: 'normal',
    debugText: null,
    size: 'sm',
 };
 
 export function makePlayer(pos, options = optionDefaults) {
-   let { char: _char, size: _size, debugText } = Object.assign({}, optionDefaults, options);
+   const opts = Object.assign({}, optionDefaults, options);
+   const { char, power, debugText } = opts;
+   let { size: _size } = opts;
    const prunThreshold = 1.2;
    const speeds = { walk: 350, turbo: 600, prun: 700, inc: 25 };
    const jumpForces = { sm: 1300, lg: 1350 };
@@ -32,7 +35,7 @@ export function makePlayer(pos, options = optionDefaults) {
       return new k.Rect(k.vec2(0, 0), 13, 27);
    }
    return k.add([
-      k.sprite(_char, { frame: 0, flipX: true }),
+      k.sprite(`${char}-${power}`, { frame: 0, flipX: true }),
       k.scale(4),
       k.area({ shape: makePlayerAreaRect() }),
       k.anchor('bot'),
@@ -70,19 +73,30 @@ export function makePlayer(pos, options = optionDefaults) {
             return _size;
          },
          set size(val) {
-            // Do not set to small if character can't be small
-            if (val==='sm' && !_char.endsWith('normal')) return;
+            // If small, can only be normal power
+            if (val==='sm' && this.power!=='normal') this.power = 'normal';
             _size = val;
             this.area.shape = makePlayerAreaRect();
          },
          get char() {
-            return _char;
+            return this.sprite.split('-')[0];
+         },
+         get power() {
+            return this.sprite.split('-')[1];
+         },
+         setSprite(newSprite) {
+            const { flipX, frame } = this;
+            this.use(k.sprite(newSprite, { frame, flipX }));
          },
          set char(val) {
-            _char = val;
-            this.sprite = _char;
+            this.setSprite(`${val}-${this.power}`);
             // Only 'normal' chars can be small
-            if (!_char.endsWith('normal') && _size==='sm') this.size = 'lg';
+            if (this.power!=='normal' && this.size==='sm') this.size = 'lg';
+         },
+         set power(val) {
+            this.setSprite(`${this.char}-${val}`);
+            // Only 'normal' chars can be small
+            if (val!=='normal' && this.size==='sm') this.size = 'lg';
          },
          get isAlive() {
             return alive;
@@ -127,6 +141,7 @@ export function makePlayer(pos, options = optionDefaults) {
             this.play('grow', { speed: 20 });
             k.wait(0.7, ()=>{
                this.isStatic = false;
+               this.power = 'normal';
                this.size = 'sm';
                this.vel = vel.scale(0.9);
                frozen = false;
@@ -255,7 +270,7 @@ export function makePlayer(pos, options = optionDefaults) {
                else if (skidding) anim = 'skid';
                else if (goDown) anim = 'duck';
                else if (moving) anim = 'walk';
-               else if (this.isGrounded() && goUp && !_char.includes('raccoon')) anim = 'lookup';
+               else if (this.isGrounded() && goUp && this.power !== 'raccoon') anim = 'lookup';
                anim += '-' + _size;
                // Actually apply calculations to the characters
                lastPos = this.pos.clone();
@@ -272,7 +287,7 @@ export function makePlayer(pos, options = optionDefaults) {
                }
                // Debug text display
                if (debugText) {
-                  debugText.text = `Character: ${this.char} (${_size})\n`+
+                  debugText.text = `Character: ${this.char} (${this.power}, ${this.size})\n`+
                      `Score: ${this.score}\n`+
                      `Coins: ${this.coins}\n`+
                      `Lives: ${this.lives}\n`+

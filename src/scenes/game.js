@@ -98,7 +98,7 @@ export default function() {
    player.on('scoreChanged', newScore=>hud.score = newScore);
    player.on('prunCountChanged', newCount=>hud.pCount = newCount);
    player.on('prunningChanged', isPrunning=>hud.pDash = isPrunning);
-   hud.player = player.sprite.split('-')[0];
+   hud.player = player.char;
    hud.lives = player.lives;
    hud.score = player.score;
    hud.coins = player.coins;
