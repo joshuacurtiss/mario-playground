@@ -89,6 +89,15 @@ export function makeGoomba(pos, options = optionDefaults) {
             if (player) player.trigger('collect', this);
             this.flipY = true;
          },
+         die(player) {
+            if (player) player.trigger('collect', this);
+            this.vel = k.vec2(0, -700);
+            this.flipY = true;
+            k.play('hit');
+            k.wait(3, () => {
+               this.destroy();
+            });
+         },
          squash(player) {
             if (player) player.trigger('collect', this);
             this.vel = k.vec2(0, 0);

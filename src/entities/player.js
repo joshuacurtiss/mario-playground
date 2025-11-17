@@ -1,8 +1,11 @@
 import k from "../kaplayCtx";
 import variableJump from "../abilities/variable-jump";
 import { coins } from "../abilities/coins";
+import { fireball } from '../abilities/fireball';
 import { lives } from "../abilities/lives";
 import { score } from "../abilities/score";
+
+const powersWithoutSmallSprites = [ 'raccoon' ];
 
 const optionDefaults = {
    char: 'mario',
@@ -22,6 +25,7 @@ export function makePlayer(pos, options = optionDefaults) {
    const runSound = k.play('p-meter', { paused: true, loop: true });
    let alive = true;
    let invulnerable = false;
+   let flashing = false;
    let frozen = false;
    let lastPos = pos.clone();
    let lastPRunCount = 0;
@@ -44,6 +48,7 @@ export function makePlayer(pos, options = optionDefaults) {
       k.z(1),
       k.offscreen({ distance: 25 }),
       coins(),
+      fireball(),
       lives(),
       score(),
       variableJump(),
@@ -85,21 +90,25 @@ export function makePlayer(pos, options = optionDefaults) {
             return this.sprite.split('-')[1];
          },
          setSprite(newSprite) {
+            if (this.sprite === newSprite) return;
             const { flipX, frame } = this;
             this.use(k.sprite(newSprite, { frame, flipX }));
          },
          set char(val) {
             this.setSprite(`${val}-${this.power}`);
-            // Only 'normal' chars can be small
-            if (this.power!=='normal' && this.size==='sm') this.size = 'lg';
+            // Some powers can't be small because they don't have the sprites
+            if (powersWithoutSmallSprites.includes(this.power) && this.size==='sm') this.size = 'lg';
          },
          set power(val) {
             this.setSprite(`${this.char}-${val}`);
-            // Only 'normal' chars can be small
-            if (val!=='normal' && this.size==='sm') this.size = 'lg';
+            // Some powers can't be small because they don't have the sprites
+            if (powersWithoutSmallSprites.includes(val) && this.size==='sm') this.size = 'lg';
          },
          get isAlive() {
             return alive;
+         },
+         get isFrozen() {
+            return frozen;
          },
          get isInvulnerable() {
             return invulnerable;
@@ -173,7 +182,7 @@ export function makePlayer(pos, options = optionDefaults) {
             this.trigger('collect', item);
          },
          add() {
-            k.onButtonPress('jump', ()=>{
+            this.onButtonPress('jump', ()=>{
                if (!this.isGrounded() || !alive || frozen) return;
                k.play('jump');
                // Implement jump force based on momentum and run state
@@ -192,6 +201,7 @@ export function makePlayer(pos, options = optionDefaults) {
             this.onCollide('coin', this.handleCollideCollectible);
             this.onCollide('powerup', this.handleCollideCollectible);
             this.on('collect', (item)=>{
+               const origPower = this.power;
                this.score += item.points;
                if (item.is('coin') || item.is('coinpop')) {
                   this.coins += 1;
@@ -199,6 +209,14 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.grow();
                } else if (item.type === '1up') {
                   this.oneUp();
+               } else if (item.type === 'flower') {
+                  this.power = 'fire';
+                  if (this.size==='lg') k.play('powerup');
+                  else this.grow();
+                  if (origPower!=='fire') {
+                     flashing = true;
+                     k.wait(0.9, ()=>flashing = false);
+                  }
                }
                item.collect();
             });
@@ -211,6 +229,14 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.opacity = k.wave(0.2, 0.8, k.time() * 75);
                } else if (this.opacity!==1) {
                   this.opacity = 1;
+               }
+               // Flashing (usually after powerup)
+               if (flashing) {
+                  const yellow = k.rgb(255, 255, 157);
+                  const purple = k.rgb(157, 196, 255);
+                  this.color = this.color.eq(yellow) ? purple : yellow;
+               } else {
+                  this.color = k.rgb(255, 255, 255);
                }
                // Don't process movement if frozen
                if (frozen) return;
@@ -271,6 +297,11 @@ export function makePlayer(pos, options = optionDefaults) {
                else if (goDown) anim = 'duck';
                else if (moving) anim = 'walk';
                else if (this.isGrounded() && goUp && this.power !== 'raccoon') anim = 'lookup';
+               // Do not interrupt certain animations until they're done. If they are set to not loop,
+               // when they are done `curAnim()` will report as `null`.
+               const doNotInterruptAnims = [ 'throw' ];
+               const curAnimRoot = (this.curAnim() ?? '').split('-')[0];
+               if (doNotInterruptAnims.includes(curAnimRoot)) anim = curAnimRoot;
                anim += '-' + _size;
                // Actually apply calculations to the characters
                lastPos = this.pos.clone();
