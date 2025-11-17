@@ -103,20 +103,9 @@ export default function() {
    hud.score = player.score;
    hud.coins = player.coins;
    // Coins
-   function spawnCoinCluster(pos, count) {
-      const type = k.randi() ? 'gold' : 'blue';
-      for (let i=0; i<count; i++) {
-         const speed = k.rand(1300, 5000);
-         const vel = k.vec2(k.rand(-1, 1), k.rand(0.25, 1)).scale(speed);
-         makeCoin(pos, { type, hasBody: true, velocity: vel, expire: 7 });
-      }
-   }
    for (let i=0; i<17; i++) {
       makeCoin(k.vec2(350*scale + i*16*scale, (i%2===0 ? 36 : 52)*scale));
    }
-   k.on('die', 'goomba', (goomba)=>{
-      k.wait(0.25, ()=>spawnCoinCluster(goomba.pos.sub(0,50), k.randi(8, 20)));
-   });
    // Blocks and Bricks
    for (let j=0 ; j<3 ; j++ ) {
       for (let i=0; i<10; i++) {
