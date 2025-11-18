@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k, { scale } from '../kaplayCtx';
 import { points } from '../abilities/points';
 import { makeIndicator } from '../ui/indicator';
 
@@ -12,7 +12,6 @@ export function makePowerup(pos, options = {}) {
    const opts = Object.assign({}, optionDefaults, options);
    let { type: _type } = opts;
    let _dir = k.randi() ? 1 : -1;
-   const scale = 4;
    const speed = 200;
    const revealHeight = pos.y - 16 * scale * (_type === 'leaf' ? 4 : 1);
    return k.add([
@@ -84,7 +83,7 @@ export function makePowerup(pos, options = {}) {
                }
             }
             // Destroy if falls out of world
-            if (this.pos.y > 10000) {
+            if (this.pos.y > 2500*scale) {
                k.destroy(this);
             }
          },

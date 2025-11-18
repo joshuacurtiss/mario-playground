@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k, { scale } from '../kaplayCtx';
 
 export function breaks() {
    return {
@@ -20,11 +20,11 @@ export function breaks() {
          const anim = this.curAnim().replace('brick', 'brickbreak');
          for ( let i=0 ; i<4 ; i++ ) {
             const piece = k.add([
-               k.sprite('items', { anim }),                             // 0 2 <-- i%2==0
-               k.pos(this.pos.add(i<2 ? 16 : 48, i%2 ? 16 : 48)),       // 1 3 <-- i%2==1
-               k.body({ gravityScale: 1.3 }),
-               k.anchor('center'),
-               k.scale(4),
+               k.sprite('items', { anim }),
+               k.pos(this.pos.add(k.vec2(i<2 ? 4 : 12, i%2 ? 4 : 12).scale(scale))),
+               k.body({ gravityScale: 1.3 }),                           // 0 2 <-- i%2==0
+               k.anchor('center'),                                      // 1 3 <-- i%2==1
+               k.scale(scale),
                k.opacity(1),
                k.lifespan(1.25, { fade: 0.5 }),
             ]);

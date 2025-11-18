@@ -1,3 +1,5 @@
+import k, { scale } from '../kaplayCtx';
+
 const optionDefaults = {
    emptyAnim: 'block-empty', // Animation to switch to when empty
 }
@@ -29,7 +31,7 @@ export function items(items, options = {}) {
          return item;
       },
       packItem(obj) {
-         obj.pos = obj.pos.add(32, 8);
+         obj.pos = obj.pos.add(k.vec2(8, 2).scale(scale));
          obj.scale = obj.scale.scale(0.1);
          obj.opacity = 0;
          obj.paused = true;

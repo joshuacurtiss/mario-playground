@@ -1,4 +1,4 @@
-import k from "../kaplayCtx";
+import k, { scale } from "../kaplayCtx";
 import { makeIndicator } from "../ui/indicator";
 import { points } from '../abilities/points';
 
@@ -8,7 +8,7 @@ const optionDefaults = {
    flying: false,
    dir: 1,
    boundaryLeft: 0,
-   boundaryRight: 5000,
+   boundaryRight: 1250 * scale,
    points: 100,
 };
 
@@ -17,7 +17,7 @@ export function makeGoomba(pos, options = optionDefaults) {
    const { boundaryLeft, boundaryRight, char } = opts;
    let { dir } = opts;
    let alive = true;
-   const speed = 100;
+   const speed = 25 * scale;
    const jumpForce = 1200;
    let i=0;
    let frozen = false;
@@ -25,7 +25,7 @@ export function makeGoomba(pos, options = optionDefaults) {
    // TODO: Add debug text (`debugText`) support
    return k.add([
       k.sprite('enemies', { anim: char }),
-      k.scale(3.9),
+      k.scale(0.975 * scale),
       k.area({
          shape: new k.Rect(k.vec2(0, -1), 14, 15),
          collisionIgnore: [ 'coin' ],
@@ -91,7 +91,7 @@ export function makeGoomba(pos, options = optionDefaults) {
          },
          die(player) {
             if (player) player.trigger('collect', this);
-            this.vel = k.vec2(0, -700);
+            this.vel = k.vec2(0, -175*scale);
             this.flipY = true;
             k.play('hit');
             k.wait(3, () => {
