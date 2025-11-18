@@ -1,4 +1,4 @@
-import k, { debug } from '../kaplayCtx';
+import k, { debug, scale } from '../kaplayCtx';
 import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makeCoin } from '../items/coin';
 import { makePlayer } from '../entities/player';
@@ -9,7 +9,6 @@ import { makeBrick } from '../items/brick';
 import { makePowerup } from '../items/powerup';
 import { makeHUD } from '../ui/hud';
 
-const scale=4;
 const gameTime=300;
 const spriteSize=16;
 const landSpriteCount = 49;
@@ -52,7 +51,7 @@ export default function() {
          k.sprite('bg-clouds'),
          k.anchor('botleft'),
          k.scale(scale),
-         k.pos(i*256*scale, 175),
+         k.pos(i*256*scale, 50*scale),
       ]);
    }
    // Background
@@ -64,7 +63,8 @@ export default function() {
       bg.add([
          k.sprite('bg-grassland'),
          k.scale(scale),
-         k.pos(i*512*scale, 40),
+         k.anchor('botleft'),
+         k.pos(i*512*scale, ground.pos.y),
       ]);
    }
    // UI
@@ -72,13 +72,13 @@ export default function() {
    ui.add([
       k.text('Use Arrow Keys to Move, Shift to Run, Z to Jump', { size: 24,  align: 'center', width: fullWidth }),
       k.color(0, 0, 0),
-      k.pos(0, 20),
+      k.pos(0, 4*scale),
       k.opacity(0.8),
    ])
    const playerDebugText = debug ? ui.add([
       k.text('', { size: 16, width: halfWidth, lineSpacing: 3 }),
       k.anchor('topleft'),
-      k.pos(10, 50),
+      k.pos(2*scale, 12*scale),
       k.color(0, 0, 0),
    ]) : null;
    const hud = ui.add(makeHUD());
@@ -86,7 +86,7 @@ export default function() {
    hud.time = endTime - k.time();
 
    // Player
-   const player = makePlayer(k.vec2(k.randi(25, 150), 0), {
+   const player = makePlayer(k.vec2(k.randi(7, 37)*scale, 0), {
       debugText: playerDebugText,
    });
    player.on('die', () => {
@@ -103,13 +103,13 @@ export default function() {
    hud.score = player.score;
    hud.coins = player.coins;
    // Coins
-   for (let i=0; i<17; i++) {
-      makeCoin(k.vec2(350*scale + i*16*scale, (i%2===0 ? 36 : 52)*scale));
+   for (let i=0; i<38; i++) {
+      makeCoin(k.vec2(100*scale + i*16*scale, ground.pos.y - (i%2===0 ? 6 : 7)*16*scale));
    }
    // Blocks and Bricks
    for (let j=0 ; j<3 ; j++ ) {
       for (let i=0; i<10; i++) {
-         const pos = k.vec2(400+j*896+i*16*scale, ground.pos.y-3*16*scale);
+         const pos = k.vec2(100*scale+j*224*scale+i*16*scale, ground.pos.y-3*16*scale);
          if (i%3===0) {
             if (i===0 || i===9) makeBlock(pos.sub(0, 16*scale));
             makeBlock(pos);
@@ -121,9 +121,9 @@ export default function() {
          }
       }
    }
-   [1040, 1936].forEach(deltaX=>{
+   [260, 484].forEach(deltaX=>{
       for (let i=0; i<4; i++) {
-         const pos = k.vec2(deltaX+i*16*scale, ground.pos.y-3*16*scale);
+         const pos = k.vec2(deltaX*scale+i*16*scale, ground.pos.y-3*16*scale);
          makeBrick(pos);
          makeCoin(pos.sub(0, 16*scale), { hasBody: true });
       }
@@ -132,10 +132,10 @@ export default function() {
    // Enemies
    function spawnGoomba() {
       if (k.get('goomba').length < 20) {
-         makeGoomba(k.vec2(k.randi(600, 2600), 0), {
+         makeGoomba(k.vec2(k.randi(150, 650)*scale, 0), {
             char: k.randi() ? 'goomba' : 'goombared',
-            boundaryLeft: 225,
-            boundaryRight: 2775,
+            boundaryLeft: 56*scale,
+            boundaryRight: 693*scale,
             dir: k.randi() ? -1 : 1,
          });
       }
@@ -185,7 +185,7 @@ export default function() {
       if (hud.time<=0) {
          k.add([
             k.sprite('ui-time-up'),
-            k.scale(4),
+            k.scale(scale),
             k.pos(halfWidth, fullHeight),
             k.anchor('top'),
             k.body({ isStatic: true }),
@@ -193,7 +193,7 @@ export default function() {
             k.z(200),
             {
                add() {
-                  this.vel = k.vec2(0, -2000);
+                  this.vel = k.vec2(0, -500*scale);
                },
                update() {
                   if (this.pos.y<fullHeight*0.3) this.vel.y = 0;

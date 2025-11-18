@@ -3,6 +3,8 @@ import kaplay from "kaplay";
 const params = new URLSearchParams(window.location.search);
 export const debug = params.has('debug');
 
+export const scale = 4;
+
 const k = kaplay({
    width: 1280,
    height: 720,

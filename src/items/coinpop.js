@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k, { scale } from '../kaplayCtx';
 import { makeIndicator } from '../ui/indicator';
 import { points } from '../abilities/points';
 
@@ -21,7 +21,7 @@ export function makeCoinPop(pos, options = {}) {
       spriteComp,
       k.pos(pos),
       k.body({ isStatic: true, gravityScale: 1.5 }),
-      k.scale(4),
+      k.scale(scale),
       points(opts.points),
       'coinpop',
       {

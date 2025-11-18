@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k, { scale } from '../kaplayCtx';
 import { makeCoinPop } from '../items/coinpop'
 import { points } from '../abilities/points';
 
@@ -28,7 +28,7 @@ export function makeCoin(pos, options = {}) {
          shape: new k.Rect(k.vec2(3, 0), 10, 16),
          collisionIgnore: [ 'coin', 'enemy' ],
       }),
-      k.scale(4),
+      k.scale(scale),
       k.offscreen({ pause: true, unpause: true }),
       points(opts.points),
       'coin',

@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k, { scale } from '../kaplayCtx';
 import { breaks } from '../abilities/breaks';
 import { bump } from '../abilities/bump';
 import { items } from '../abilities/items';
@@ -15,7 +15,7 @@ export function makeBrick(pos, options = {}) {
       k.pos(pos),
       k.area(),
       k.body({ isStatic: true }),
-      k.scale(4),
+      k.scale(scale),
       breaks(),
       bump(),
       items(itemsArray),

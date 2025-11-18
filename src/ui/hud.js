@@ -1,6 +1,4 @@
-import k from '../kaplayCtx';
-
-const scale=4;
+import k, { scale } from '../kaplayCtx';
 
 export function makeHUD() {
    let _world;

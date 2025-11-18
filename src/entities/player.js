@@ -1,4 +1,4 @@
-import k from "../kaplayCtx";
+import k, { scale } from "../kaplayCtx";
 import variableJump from "../abilities/variable-jump";
 import { coins } from "../abilities/coins";
 import { fireball } from '../abilities/fireball';
@@ -19,7 +19,7 @@ export function makePlayer(pos, options = optionDefaults) {
    const { char, power, debugText } = opts;
    let { size: _size } = opts;
    const prunThreshold = 1.2;
-   const speeds = { walk: 350, turbo: 600, prun: 700, inc: 25 };
+   const speeds = { walk: 87*scale, turbo: 150*scale, prun: 175*scale, inc: 6*scale };
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
@@ -40,13 +40,13 @@ export function makePlayer(pos, options = optionDefaults) {
    }
    return k.add([
       k.sprite(`${char}-${power}`, { frame: 0, flipX: true }),
-      k.scale(4),
+      k.scale(scale),
       k.area({ shape: makePlayerAreaRect() }),
       k.anchor('bot'),
       k.pos(pos),
       k.body(),
       k.z(1),
-      k.offscreen({ distance: 25 }),
+      k.offscreen({ distance: 7*scale }),
       coins(),
       fireball(),
       lives(),
@@ -323,7 +323,7 @@ export function makePlayer(pos, options = optionDefaults) {
                      `Coins: ${this.coins}\n`+
                      `Lives: ${this.lives}\n`+
                      `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
-                     `Momentum: ${momentum}\n`+
+                     `Momentum: ${momentum.toFixed(0)}\n`+
                      `Run Time: ${runTime.toFixed(2)}s\n`+
                      `P-Meter: ${'>'.repeat(prunCount) + (prunning ? ' P' : '')}\n`+
                      `Skidding: ${skidding}\n`+
