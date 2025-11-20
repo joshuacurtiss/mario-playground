@@ -23,6 +23,7 @@ export function makePlayer(pos, options = optionDefaults) {
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
+   const swipeSound = k.play('spin', { paused: true, loop: false });
    let alive = true;
    let invulnerable = false;
    let flashing = false;
@@ -31,10 +32,12 @@ export function makePlayer(pos, options = optionDefaults) {
    let lastPRunCount = 0;
    let lastPRunning = false;
    let runTime = 0;
+   let flyTime = 0;
    let momentum = 0;
    function makePlayerAreaRect(options = {}) {
-      const { ducking } = Object.assign({}, { ducking: false }, options);
+      const { ducking, swiping } = Object.assign({}, { ducking: false, swiping: false }, options);
       if (ducking) return new k.Rect(k.vec2(0, 0), 10, 16);
+      if (swiping) return new k.Rect(k.vec2(0, 0), 24, 27);
       if (_size === 'sm') return new k.Rect(k.vec2(0, 0), 10, 15);
       return new k.Rect(k.vec2(0, 0), 13, 27);
    }
@@ -147,10 +150,10 @@ export function makePlayer(pos, options = optionDefaults) {
             this.vel = k.vec2(0, 0);
             k.wait(2.5, ()=>invulnerable = false);
             k.play('hurt');
+            this.power = 'normal';
             this.play('grow', { speed: 20 });
             k.wait(0.7, ()=>{
                this.isStatic = false;
-               this.power = 'normal';
                this.size = 'sm';
                this.vel = vel.scale(0.9);
                frozen = false;
@@ -171,6 +174,16 @@ export function makePlayer(pos, options = optionDefaults) {
                   if (this.isJumping()) return;
                   this.variableJump(jumpForces[_size]*1.1);
                });
+            } else if (this.curAnim()?.startsWith('swipe') && enemy.pos.y > this.pos.y - this.area.shape.height/2) {
+               k.add([
+                  k.sprite('items', { anim: 'strike', animSpeed: 2 }),
+                  k.scale(this.scale),
+                  k.anchor('center'),
+                  k.pos(this.pos.x + 15*this.scale.x*(this.flipX ? 1 : -1), this.pos.y - 7*this.scale.y),
+                  k.opacity(1),
+                  k.lifespan(0.25),
+               ])
+               enemy.die(this);
             } else if (!invulnerable) {
                enemy.freeze(0.7);
                this.hurt();
@@ -182,8 +195,34 @@ export function makePlayer(pos, options = optionDefaults) {
             this.trigger('collect', item);
          },
          add() {
+            this.onButtonPress('turbo', ()=>{
+               // Never act if not alive or frozen
+               if (!alive || frozen) return;
+               // Raccoon should swipe tail when turbo is pressed
+               if (this.power!=='raccoon') return;
+               swipeSound.play(0);
+               this.play(`swipe-${_size}`, { loop: false, speed: 15 });
+               this.area.shape = makePlayerAreaRect({ swiping: true });
+            });
             this.onButtonPress('jump', ()=>{
-               if (!this.isGrounded() || !alive || frozen) return;
+               // Never act if not alive or frozen
+               if (!alive || frozen) return;
+               // Raccoon should float when "jumping" in mid-air
+               if (this.power==='raccoon') {
+                  if (runTime>=prunThreshold && flyTime<4) {
+                     swipeSound.play(0);
+                     this.play(`fly-${_size}`, { loop: false });
+                     if (this.isGrounded()) flyTime = 0;
+                     else this.vel.y = -750;
+                  } else {
+                     runTime = 0;
+                     flyTime = 0;
+                     this.play(`wag-${_size}`, { loop: false, speed: 12 });
+                     if (!this.isGrounded()) swipeSound.play(0);
+                  }
+               }
+               // Any other case, only jump if grounded
+               if (!this.isGrounded()) return;
                k.play('jump');
                // Implement jump force based on momentum and run state
                let jumpForce = jumpForces[_size];
@@ -209,6 +248,31 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.grow();
                } else if (item.type === '1up') {
                   this.oneUp();
+               } else if (item.type === 'leaf') {
+                  if (this.power === 'raccoon') {
+                     k.play('powerup');
+                  } else {
+                     k.play('transform');
+                     this.opacity = 0;
+                     frozen = true;
+                     const vel = this.vel.clone();
+                     this.isStatic = true;
+                     this.vel = k.vec2(0, 0);
+                     this.add([
+                        k.sprite('items', { anim: 'poof' }),
+                        k.anchor('center'),
+                        k.pos(0, -this.area.shape.height/2),
+                        k.opacity(1),
+                        k.lifespan(0.6),
+                     ]);
+                     k.wait(0.5, ()=>{
+                        frozen = false;
+                        this.power = 'raccoon';
+                        this.opacity = 1;
+                        this.isStatic = false;
+                        this.vel = vel;
+                     });
+                  }
                } else if (item.type === 'flower') {
                   this.power = 'fire';
                   if (this.size==='lg') k.play('powerup');
@@ -227,7 +291,7 @@ export function makePlayer(pos, options = optionDefaults) {
                // Invulnerability
                if (invulnerable) {
                   this.opacity = k.wave(0.2, 0.8, k.time() * 75);
-               } else if (this.opacity!==1) {
+               } else if (this.opacity!==1 && this.opacity>0) {
                   this.opacity = 1;
                }
                // Flashing (usually after powerup)
@@ -240,6 +304,13 @@ export function makePlayer(pos, options = optionDefaults) {
                }
                // Don't process movement if frozen
                if (frozen) return;
+               // If wagging tail, slow down vertical velocity
+               if (this.curAnim()?.startsWith('wag')) {
+                  if (this.isGrounded()) this.play(`walk-${_size}`);
+                  else if (this.vel.y>0) this.vel.y *= 0.85;
+               } else if (this.curAnim()?.startsWith('fly') && !this.isGrounded()) {
+                  flyTime += k.dt();
+               }
                // Up/down take priority unless you're mid-jump
                const goUp = this.isGrounded() && k.isButtonDown('up');
                const goDown = !goUp && k.isButtonDown('down');
@@ -258,7 +329,7 @@ export function makePlayer(pos, options = optionDefaults) {
                if (runTime<0) runTime = 0;
                else if (runTime>prunThreshold) runTime = prunThreshold;
                // Check for p-run
-               const prunning = goTurbo && goLeftOrRight && runTime>=prunThreshold;
+               const prunning = goTurbo && runTime>=prunThreshold && (goLeftOrRight || !this.isGrounded());
                const prunCount = Math.ceil(runTime*6 / prunThreshold);
                if (prunCount!==lastPRunCount) {
                   lastPRunCount = prunCount;
@@ -290,6 +361,7 @@ export function makePlayer(pos, options = optionDefaults) {
                   if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
                }
                let anim = 'idle';
+               let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
                if (prunning && this.isGrounded()) anim = 'run';
                else if (prunning) anim = 'pjump';
                else if (this.isFalling() || this.isJumping()) anim = 'jump';
@@ -299,13 +371,16 @@ export function makePlayer(pos, options = optionDefaults) {
                else if (this.isGrounded() && goUp && this.power !== 'raccoon') anim = 'lookup';
                // Do not interrupt certain animations until they're done. If they are set to not loop,
                // when they are done `curAnim()` will report as `null`.
-               const doNotInterruptAnims = [ 'throw' ];
+               const doNotInterruptAnims = [ 'fly', 'swipe', 'throw', 'wag' ];
                const curAnimRoot = (this.curAnim() ?? '').split('-')[0];
-               if (doNotInterruptAnims.includes(curAnimRoot)) anim = curAnimRoot;
+               if (doNotInterruptAnims.includes(curAnimRoot)) {
+                  // Do not change animation or speed until current is done
+                  anim = curAnimRoot;
+                  animSpeed = 1;
+               }
                anim += '-' + _size;
                // Actually apply calculations to the characters
                lastPos = this.pos.clone();
-               const animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
                if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
                if (this.hasAnim(anim) && this.curAnim()!==anim) {
                   this.play(anim);
@@ -325,6 +400,7 @@ export function makePlayer(pos, options = optionDefaults) {
                      `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
                      `Momentum: ${momentum.toFixed(0)}\n`+
                      `Run Time: ${runTime.toFixed(2)}s\n`+
+                     `Fly Time: ${flyTime.toFixed(2)}s\n`+
                      `P-Meter: ${'>'.repeat(prunCount) + (prunning ? ' P' : '')}\n`+
                      `Skidding: ${skidding}\n`+
                      `Anim: ${this.curAnim()} (${this.animSpeed.toFixed(1)}x)`;
