@@ -12,12 +12,12 @@ export function makePowerup(pos, options = {}) {
    const opts = Object.assign({}, optionDefaults, options);
    let { type: _type } = opts;
    let _dir = k.randi() ? 1 : -1;
-   const speed = 200;
-   const revealHeight = pos.y - 16 * scale * (_type === 'leaf' ? 4 : 1);
+   const speed = 50 * scale;
+   const revealHeight = pos.y - 16 * scale * (_type === 'leaf' ? 3.25 : 1);
    return k.add([
       k.sprite('items', { anim: _type }),
       k.pos(pos),
-      k.body({ isStatic: true }),
+      k.body({ isStatic: true, maxVelocity: _type === 'leaf' ? 175 : undefined }),
       k.area({ collisionIgnore: [ 'powerup', 'coin', 'coinpop', 'enemy', 'block-or-brick', 'player' ] }),
       k.scale(scale),
       points(opts.points),
@@ -64,14 +64,26 @@ export function makePowerup(pos, options = {}) {
             // Specific powerup behaviors
             if (_type === 'mushroom' || _type === '1up') {
                this.vel = k.vec2(speed*this.dir, 0);
+            } else if (_type === 'leaf') {
+               this.collisionIgnore.push('block-or-brick');
+               this.collisionIgnore.push('ground');
+               this.gravityScale = 0;
+               this.z = 5;
+               const leafStartFalling = k.time() + 0.06;
+               this.onUpdate(()=>{
+                  if (k.time() < leafStartFalling) return;
+                  this.gravityScale = 1;
+                  this.vel.x = 35 * scale * Math.sin(k.time() * 3);
+                  this.flipX = this.vel.x > 0;
+                  this.applyImpulse(k.vec2(0, Math.abs(this.vel.x) * -0.22));
+               });
+            } else if (_type === 'star') {
+               // TODO: Handle bouncing star
             }
-            // TODO: Handle bouncing 'star'
-            // TODO: Handle floating 'leaf'
-            // All other types just sit still.
          },
          update() {
             if (this.is('revealing')) {
-               this.moveBy(0, -1.25);
+               this.moveBy(0, -1.25 * (_type === 'leaf' ? 1.75*this.pos.y/revealHeight : 1));
                // Stop ignoring player collisions once 0.25 revealed
                if (this.pos.y <= revealHeight + (this.height * scale * 0.75)) {
                   this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='player');
@@ -97,6 +109,10 @@ export function makePowerup(pos, options = {}) {
             };
             this.onCollide('block-or-brick', handleCollide);
             this.onCollideUpdate('block-or-brick', handleCollide);
+            // Leaf has different collision area
+            if (_type === 'leaf') {
+               this.area.shape = new k.Rect(k.vec2(2, 2), 12, 12);
+            }
             // Reveal immediately if specified
             if (opts.reveal) this.reveal();
          },
