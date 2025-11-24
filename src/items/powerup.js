@@ -52,7 +52,7 @@ export function makePowerup(pos, options = {}) {
             this.isStatic = false;
          },
          collect() {
-            makeIndicator(this.pos.sub(0, this.height), this.points);
+            makeIndicator(this.pos.sub(0, this.height), { msg: this.points });
             k.destroy(this);
          },
          postReveal() {

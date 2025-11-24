@@ -4,6 +4,7 @@ import { coins } from "../abilities/coins";
 import { fireball } from '../abilities/fireball';
 import { lives } from "../abilities/lives";
 import { score } from "../abilities/score";
+import { makeIndicator } from "../ui/indicator";
 
 const powersWithoutSmallSprites = [ 'raccoon' ];
 
@@ -34,6 +35,7 @@ export function makePlayer(pos, options = optionDefaults) {
    let runTime = 0;
    let flyTime = 0;
    let momentum = 0;
+   let jumpCombo = 0;
    function makePlayerAreaRect(options = {}) {
       const { ducking, swiping } = Object.assign({}, { ducking: false, swiping: false }, options);
       if (ducking) return new k.Rect(k.vec2(0, 0), 10, 16);
@@ -162,12 +164,16 @@ export function makePlayer(pos, options = optionDefaults) {
          oneUp() {
             this.lives += 1;
             k.play('1up');
+            makeIndicator(this.pos.sub(0, this.area.shape.height*this.scale.y-this.area.shape.pos.y*this.scale.y), { sprite: 'ui-1up' });
          },
          handleCollideEnemy(enemy, col) {
             if (!alive || frozen || !enemy.isAlive) return;
             // Must hit top part of enemy  with downward velocity to squash
             const thresholdY = enemy.pos.y - enemy.area.shape.pos.y - enemy.area.shape.height / 2;
             if ((this.pos.y <= thresholdY) && this.vel.y > 0) {
+               jumpCombo = !jumpCombo ? 1 : jumpCombo * 2;
+               enemy.points *= jumpCombo;
+               if (enemy.isOneUp) this.oneUp();
                enemy.squash(this);
                // We wait a tick to bounce in case we squash multiple enemies in one frame
                k.wait(0, ()=>{
@@ -328,6 +334,8 @@ export function makePlayer(pos, options = optionDefaults) {
                runTime += k.dt() * runtimeMultiplier;
                if (runTime<0) runTime = 0;
                else if (runTime>prunThreshold) runTime = prunThreshold;
+               // Reset jump combo if we touch the ground
+               if (this.isGrounded()) jumpCombo = 0;
                // Check for p-run
                const prunning = goTurbo && runTime>=prunThreshold && (goLeftOrRight || !this.isGrounded());
                const prunCount = Math.ceil(runTime*6 / prunThreshold);

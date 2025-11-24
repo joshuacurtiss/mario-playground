@@ -45,7 +45,7 @@ export function makeCoinPop(pos, options = {}) {
                   k.lifespan(0.3),
                   k.z(this.z),
                ]);
-               makeIndicator(this.pos.add(exp.width/2*exp.scale.x, 0), opts.points);
+               makeIndicator(this.pos.add(exp.width/2*exp.scale.x, 0), { msg: this.points });
                k.destroy(this);
             });
          },

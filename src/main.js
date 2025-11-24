@@ -16,6 +16,7 @@ import home from "./scenes/home";
 [
    'bg-clouds',
    'bg-grassland',
+   'ui-1up',
    'ui-hud-cards',
    'ui-hud-dashboard',
    'ui-hud-items',

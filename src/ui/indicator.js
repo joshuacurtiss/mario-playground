@@ -1,8 +1,17 @@
-import k from "../kaplayCtx";
+import k, { scale } from "../kaplayCtx";
 
-export function makeIndicator(pos, msg) {
+const optionDefaults = {
+   msg: null,
+   sprite: null,
+   anim: null,
+}
+
+export function makeIndicator(pos, options = optionDefaults) {
+   const { msg, sprite, anim } = options;
    const indicator = k.add([
-      k.text(msg, { size: 20, letterSpacing: -3 }),
+      msg ? k.text(msg, { size: 20, letterSpacing: -3 }) : '',
+      sprite ? k.sprite(sprite, { anim }) : '',
+      sprite ? k.scale(scale) : '',
       k.color(255, 255, 255),
       k.anchor('center'),
       k.pos(pos),
