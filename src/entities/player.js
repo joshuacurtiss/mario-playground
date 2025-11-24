@@ -151,12 +151,29 @@ export function makePlayer(pos, options = optionDefaults) {
             this.isStatic = true;
             this.vel = k.vec2(0, 0);
             k.wait(2.5, ()=>invulnerable = false);
-            k.play('hurt');
-            this.power = 'normal';
-            this.play('grow', { speed: 20 });
-            k.wait(0.7, ()=>{
+            if (this.power === 'normal') {
+               // When normal, player shrinks
+               k.play('hurt');
+               this.play('grow', { speed: 20 });
+               k.wait(0.5, ()=>{ this.size = 'sm' });
+            } else if (['raccoon', 'frog', 'hammer', 'tanooki'].includes(this.power)) {
+               // Raccoon, frog, hammer, tanooki: Transform with a poof
+               k.play('transform');
+               this.add([
+                  k.sprite('items', { anim: 'poof' }),
+                  k.anchor('center'),
+                  k.pos(0, -this.area.shape.height/2),
+                  k.opacity(1),
+                  k.lifespan(0.6),
+               ]);
+            } else {
+               // Other powers (like fire): Just play hurt sound
+               k.play('hurt');
+            }
+            // When done hurting, unfreeze player and restore velocity
+            k.wait(0.5, ()=>{
+               this.power = 'normal';
                this.isStatic = false;
-               this.size = 'sm';
                this.vel = vel.scale(0.9);
                frozen = false;
             });
