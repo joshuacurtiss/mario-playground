@@ -273,9 +273,11 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.oneUp();
                } else if (item.type === 'star') {
                   invulnerable = true;
-                  // TODO: Cause the player to flash rapidly
-
-                  k.wait(8, ()=>invulnerable = false);
+                  flashing = true;
+                  k.wait(8, ()=>{
+                     invulnerable = false;
+                     flashing = false;
+                  });
                } else if (item.type === 'leaf') {
                   if (this.power === 'raccoon') {
                      k.play('powerup');
