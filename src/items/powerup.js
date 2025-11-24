@@ -15,7 +15,7 @@ export function makePowerup(pos, options = {}) {
    const speed = 50 * scale;
    const revealHeight = pos.y - 16 * scale * (_type === 'leaf' ? 3.25 : 1);
    return k.add([
-      k.sprite('items', { anim: _type }),
+      k.sprite('items', { anim: _type, animSpeed: _type==='star' ? 2 : 1 }),
       k.pos(pos),
       k.body({ isStatic: true, maxVelocity: _type === 'leaf' ? 175 : undefined }),
       k.area({ collisionIgnore: [ 'powerup', 'coin', 'coinpop', 'enemy', 'block-or-brick', 'player' ] }),
@@ -78,7 +78,10 @@ export function makePowerup(pos, options = {}) {
                   this.applyImpulse(k.vec2(0, Math.abs(this.vel.x) * -0.22));
                });
             } else if (_type === 'star') {
-               // TODO: Handle bouncing star
+               const starVertSpeed = -175 * scale;
+               this.gravityScale = 0.5;
+               this.vel = k.vec2(speed*this.dir, starVertSpeed);
+               this.onGround(()=>this.vel.y = starVertSpeed);
             }
          },
          update() {

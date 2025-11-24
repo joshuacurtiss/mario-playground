@@ -119,7 +119,7 @@ export default function() {
          } else {
             makeBlock(pos, {
                type: 'question',
-               items: i%3===1 ? Array(8).fill().map(()=>makeCoinPop(pos)) : makePowerup(pos, { type: i>6 ? 'flower' : i<3 ? 'leaf' : 'mushroom' }),
+               items: i%3===1 ? Array(8).fill().map(()=>makeCoinPop(pos)) : makePowerup(pos, { type: i>6 ? 'flower' : i<3 ? 'star' : 'mushroom' }),
             });
          }
       }
