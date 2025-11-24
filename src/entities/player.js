@@ -15,6 +15,15 @@ const optionDefaults = {
    size: 'sm',
 };
 
+k.loadShader('invert', null, `
+   uniform float u_time;
+   vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
+      vec4 c = def_frag();
+      float t = (sin(u_time * 15.0) + 1.0) / 2.0;
+      return mix(c, vec4(1.0 - c.r, 1.0 - c.g, 1.0 - c.b, c.a), t);
+   }
+`);
+
 export function makePlayer(pos, options = optionDefaults) {
    const opts = Object.assign({}, optionDefaults, options);
    const { char, power, debugText } = opts;
@@ -29,6 +38,7 @@ export function makePlayer(pos, options = optionDefaults) {
    let invulnerable = false;
    let flashing = false;
    let frozen = false;
+   let starPower = false;
    let lastPos = pos.clone();
    let lastPRunCount = 0;
    let lastPRunning = false;
@@ -187,7 +197,10 @@ export function makePlayer(pos, options = optionDefaults) {
             if (!alive || frozen || !enemy.isAlive) return;
             // Must hit top part of enemy  with downward velocity to squash
             const thresholdY = enemy.pos.y - enemy.area.shape.pos.y - enemy.area.shape.height / 2;
-            if ((this.pos.y <= thresholdY) && this.vel.y > 0) {
+            // But star power comes first. Enemy just dies with no bounce if star power.
+            if (starPower) {
+               enemy.die(this);
+            } else if ((this.pos.y <= thresholdY) && this.vel.y > 0) {
                jumpCombo = !jumpCombo ? 1 : jumpCombo * 2;
                enemy.points *= jumpCombo;
                if (enemy.isOneUp) this.oneUp();
@@ -271,6 +284,15 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.grow();
                } else if (item.type === '1up') {
                   this.oneUp();
+               } else if (item.type === 'star') {
+                  starPower = true;
+                  flashing = true;
+                  this.use(k.shader("invert", ()=>({ "u_time": k.time() })));
+                  k.wait(8, ()=>{
+                     this.unuse('shader');
+                     flashing = false;
+                     starPower = false;
+                  });
                } else if (item.type === 'leaf') {
                   if (this.power === 'raccoon') {
                      k.play('powerup');
@@ -319,9 +341,12 @@ export function makePlayer(pos, options = optionDefaults) {
                }
                // Flashing (usually after powerup)
                if (flashing) {
-                  const yellow = k.rgb(255, 255, 157);
-                  const purple = k.rgb(157, 196, 255);
-                  this.color = this.color.eq(yellow) ? purple : yellow;
+                  const t = k.time() * 30;
+                  this.color = k.rgb(
+                     k.wave(128, 255, t),
+                     k.wave(128, 255, t + 2),
+                     k.wave(128, 255, t + 4),
+                  );
                } else {
                   this.color = k.rgb(255, 255, 255);
                }
@@ -388,8 +413,8 @@ export function makePlayer(pos, options = optionDefaults) {
                let anim = 'idle';
                let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
                if (prunning && this.isGrounded()) anim = 'run';
-               else if (prunning) anim = 'pjump';
-               else if (this.isFalling() || this.isJumping()) anim = 'jump';
+               else if (prunning) anim = (starPower && _size==='lg') ? 'somersault' : 'pjump';
+               else if (this.isFalling() || this.isJumping()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
                else if (skidding) anim = 'skid';
                else if (goDown) anim = 'duck';
                else if (moving) anim = 'walk';
@@ -404,6 +429,7 @@ export function makePlayer(pos, options = optionDefaults) {
                   animSpeed = 1;
                }
                anim += '-' + _size;
+               if (anim.startsWith('somersault')) animSpeed *= 3;
                // Actually apply calculations to the characters
                lastPos = this.pos.clone();
                if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
