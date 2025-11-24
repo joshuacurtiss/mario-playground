@@ -68,7 +68,10 @@ export default function() {
       ]);
    }
    // UI
-   const ui = k.add([ k.fixed() ]);
+   const ui = k.add([
+      k.fixed(),
+      k.z(1001),
+   ]);
    ui.add([
       k.text('Use Arrow Keys to Move, Shift to Run, Z to Jump', { size: 24,  align: 'center', width: fullWidth }),
       k.color(0, 0, 0),
