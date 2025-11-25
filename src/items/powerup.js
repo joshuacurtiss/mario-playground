@@ -103,6 +103,8 @@ export function makePowerup(pos, options = {}) {
             }
          },
          add() {
+            // 1up doesn't have points
+            if (_type === '1up') this.points = 0;
             // Change direction when bumping into things
             const handleCollide = (obj, col)=>{
                if (col.normal.x) {
