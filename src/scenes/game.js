@@ -180,7 +180,7 @@ export default function() {
       }
    });
    // Updates
-   k.onUpdate(() => {
+   k.onFixedUpdate(() => {
       // Disable camera movement if player is not alive
       if (!player.isAlive) return;
       // Update HUD time

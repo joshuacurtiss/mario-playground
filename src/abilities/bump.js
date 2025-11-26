@@ -1,6 +1,6 @@
 import k from '../kaplayCtx';
 
-export function bump(masterSpeed = k.vec2(0, -12)) {
+export function bump(masterSpeed = k.vec2(0, -15)) {
    let bumping = false;
    let bumpMove; // The current movement vector during bump, changing per frame
    let thisBumpSpeed; // The speed of the current bump
@@ -42,11 +42,11 @@ export function bump(masterSpeed = k.vec2(0, -12)) {
             }
          });
       },
-      update() {
+      fixedUpdate() {
          if (bumping) {
             this.moveBy(bumpMove);
             ['x', 'y'].forEach(axis=>{
-               if (thisBumpSpeed[axis]) bumpMove[axis] += thisBumpSpeed[axis] > 0 ? -2 : 2;
+               if (thisBumpSpeed[axis]) bumpMove[axis] += thisBumpSpeed[axis] > 0 ? -3 : 3;
             });
             // Check if we are back to original position. Consider the bump done.
             if (this.pos.dist(origPos) < 1) {

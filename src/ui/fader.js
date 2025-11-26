@@ -18,7 +18,7 @@ export default function makeFader(options = {}) {
       k.z(999999),
       k.opacity(opacity),
       {
-         update() {
+         fixedUpdate() {
             if (direction==='out' && this.opacity<1) {
                this.opacity += k.dt() * speed;
             } else if (direction==='in' && this.opacity>0) {

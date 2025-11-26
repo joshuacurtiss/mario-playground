@@ -37,7 +37,7 @@ export function makeGoomba(pos, options = optionDefaults) {
       points(opts.points),
       {
          add() {
-            k.onUpdate(()=>{
+            k.onFixedUpdate(()=>{
                if (!alive || frozen) return;
                this.move(speed * dir, 0);
                if (!this.isGrounded()) return;

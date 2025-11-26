@@ -29,7 +29,7 @@ export function makePlayer(pos, options = optionDefaults) {
    const { char, power, debugText } = opts;
    let { size: _size } = opts;
    const prunThreshold = 1.2;
-   const speeds = { walk: 87*scale, turbo: 150*scale, prun: 175*scale, inc: 6*scale };
+   const speeds = { walk: 87*scale, turbo: 150*scale, prun: 175*scale, dec: 5*scale, inc: 7*scale };
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
@@ -215,7 +215,7 @@ export function makePlayer(pos, options = optionDefaults) {
                   k.sprite('items', { anim: 'strike', animSpeed: 2 }),
                   k.scale(this.scale),
                   k.anchor('center'),
-                  k.pos(this.pos.x + 15*this.scale.x*(this.flipX ? 1 : -1), this.pos.y - 7*this.scale.y),
+                  k.pos(this.pos.x + 15*this.scale.x*(enemy.pos.x<this.pos.x ? -1 : 1), this.pos.y - 7*this.scale.y),
                   k.opacity(1),
                   k.lifespan(0.25),
                ])
@@ -286,12 +286,14 @@ export function makePlayer(pos, options = optionDefaults) {
                   this.oneUp();
                } else if (item.type === 'star') {
                   starPower = true;
+                  this.trigger('starPowerChanged', starPower);
                   flashing = true;
                   this.use(k.shader("invert", ()=>({ "u_time": k.time() })));
                   k.wait(8, ()=>{
                      this.unuse('shader');
                      flashing = false;
                      starPower = false;
+                     this.trigger('starPowerChanged', starPower);
                   });
                } else if (item.type === 'leaf') {
                   if (this.power === 'raccoon') {
@@ -330,7 +332,7 @@ export function makePlayer(pos, options = optionDefaults) {
                item.collect();
             });
             this.on('1up', this.oneUp);
-            this.onUpdate(()=>{
+            this.onFixedUpdate(()=>{
                // Don't process if dead
                if (!alive) return;
                // Invulnerability
@@ -355,7 +357,7 @@ export function makePlayer(pos, options = optionDefaults) {
                // If wagging tail, slow down vertical velocity
                if (this.curAnim()?.startsWith('wag')) {
                   if (this.isGrounded()) this.play(`walk-${_size}`);
-                  else if (this.vel.y>0) this.vel.y *= 0.85;
+                  else if (this.vel.y>0) this.vel.y *= 0.6;
                } else if (this.curAnim()?.startsWith('fly') && !this.isGrounded()) {
                   flyTime += k.dt();
                }
@@ -399,13 +401,13 @@ export function makePlayer(pos, options = optionDefaults) {
                if (!goLeftOrRight) {
                   // Decay momentum
                   const momentumDir = momentum>0 ? 1 : -1;
-                  momentum -= speeds.inc*0.8 * momentumDir;
+                  momentum -= speeds.dec * momentumDir;
                   // Only slow down to zero, don't reverse when decaying
                   if ((momentumDir>0 && momentum<0) || (momentumDir<0 && momentum>0)) momentum=0;
                } else {
                   const goDir = goLeft ? -1 : 1;
-                  // If mid-air, you can change direction a little faster (1.5x)
-                  momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.5);
+                  // If mid-air, you can change direction a little faster (1.75x)
+                  momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.75);
                   const momentumDir = momentum>0 ? 1 : -1;
                   // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
                   if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
@@ -414,7 +416,7 @@ export function makePlayer(pos, options = optionDefaults) {
                let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
                if (prunning && this.isGrounded()) anim = 'run';
                else if (prunning) anim = (starPower && _size==='lg') ? 'somersault' : 'pjump';
-               else if (this.isFalling() || this.isJumping()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
+               else if (!this.isGrounded()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
                else if (skidding) anim = 'skid';
                else if (goDown) anim = 'duck';
                else if (moving) anim = 'walk';

@@ -1,6 +1,6 @@
 import k, { scale } from '../kaplayCtx';
 
-export default function variableJump(jumpButton = 'jump', breakSpeed = 30*scale) {
+export default function variableJump(jumpButton = 'jump', breakSpeed = 35*scale) {
    let jumping = false;
    return {
       variableJump(force) {
@@ -15,7 +15,7 @@ export default function variableJump(jumpButton = 'jump', breakSpeed = 30*scale)
             this.endVariableJump();
          });
       },
-      update() {
+      fixedUpdate() {
          // When they release the jump button, push the breaks on the upward velocity
          // until they hit the peak, then we let gravity take over as normal.
          if (jumping && !k.isButtonDown(jumpButton) && this.vel.y < -breakSpeed) {

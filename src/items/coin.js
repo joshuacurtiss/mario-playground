@@ -43,7 +43,7 @@ export function makeCoin(pos, options = {}) {
    if (expire) {
       k.wait(expire, ()=>obj.destroy());
       k.wait(expire>2 ? expire-2 : 0, ()=>expiringSoon=true);
-      obj.onUpdate(()=>{
+      obj.onFixedUpdate(()=>{
          // Flash when expiring soon
          if (expiringSoon) obj.opacity = k.wave(0.2, 0.8, k.time() * 75);
       });
