@@ -1,6 +1,6 @@
 import k, { scale } from "../kaplayCtx";
 import { makeIndicator } from "../ui/indicator";
-import { points } from '../abilities/points';
+import { points } from '../shared-abilities/points';
 
 const optionDefaults = {
    char: 'goomba',

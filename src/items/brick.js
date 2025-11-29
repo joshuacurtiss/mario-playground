@@ -1,7 +1,7 @@
 import k, { scale } from '../kaplayCtx';
-import { breaks } from '../abilities/breaks';
-import { bump } from '../abilities/bump';
-import { items } from '../abilities/items';
+import { breaks } from './abilities/breaks';
+import { bump } from './abilities/bump';
+import { items } from './abilities/items';
 
 const optionDefaults = {
    type: 'normal', // 'normal' | 'ice'

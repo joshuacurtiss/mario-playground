@@ -1,4 +1,4 @@
-import k, { scale } from '../kaplayCtx';
+import k, { scale } from '../../kaplayCtx';
 
 export function breaks() {
    return {

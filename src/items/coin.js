@@ -1,6 +1,6 @@
 import k, { scale } from '../kaplayCtx';
-import { makeCoinPop } from '../items/coinpop'
-import { points } from '../abilities/points';
+import { makeCoinPop } from './coinpop'
+import { points } from '../shared-abilities/points';
 
 const bodyOptionDefaults = {
    gravityScale: 0.75,

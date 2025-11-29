@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k from '../../kaplayCtx';
 
 export function bump(masterSpeed = k.vec2(0, -15)) {
    let bumping = false;

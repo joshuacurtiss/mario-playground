@@ -1,4 +1,4 @@
-import k, { scale } from '../kaplayCtx';
+import k, { scale } from '../../kaplayCtx';
 
 export default function variableJump(jumpButton = 'jump', breakSpeed = 35*scale) {
    let jumping = false;

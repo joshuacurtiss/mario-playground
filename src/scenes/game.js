@@ -1,8 +1,8 @@
 import k, { debug, scale } from '../kaplayCtx';
 import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makeCoin } from '../items/coin';
-import { makePlayer } from '../entities/player';
-import { makeGoomba } from '../entities/goomba';
+import { makeMario } from '../chars/mario';
+import { makeGoomba } from '../enemies/goomba';
 import { makeCoinPop } from '../items/coinpop';
 import { makeBlock } from '../items/block';
 import { makeBrick } from '../items/brick';
@@ -89,7 +89,7 @@ export default function() {
    hud.time = endTime - k.time();
 
    // Player
-   const player = makePlayer(k.vec2(k.randi(7, 37)*scale, 0), {
+   const player = makeMario(k.vec2(k.randi(7, 37)*scale, 0), {
       debugText: playerDebugText,
    });
    player.on('die', () => {

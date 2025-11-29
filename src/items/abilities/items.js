@@ -1,4 +1,4 @@
-import k, { scale } from '../kaplayCtx';
+import k, { scale } from '../../kaplayCtx';
 
 const optionDefaults = {
    emptyAnim: 'block-empty', // Animation to switch to when empty

@@ -1,5 +1,5 @@
 import k, { scale } from '../kaplayCtx';
-import { points } from '../abilities/points';
+import { points } from '../shared-abilities/points';
 import { makeIndicator } from '../ui/indicator';
 
 const optionDefaults = {

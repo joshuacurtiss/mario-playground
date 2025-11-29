@@ -1,6 +1,6 @@
 import k, { scale } from '../kaplayCtx';
-import { bump } from '../abilities/bump';
-import { items } from '../abilities/items';
+import { bump } from './abilities/bump';
+import { items } from './abilities/items';
 
 const optionDefaults = {
    type: 'empty', // 'empty' | 'wood' | 'question'

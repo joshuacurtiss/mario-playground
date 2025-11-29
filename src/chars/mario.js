@@ -1,9 +1,9 @@
 import k, { scale } from "../kaplayCtx";
-import variableJump from "../abilities/variable-jump";
-import { coins } from "../abilities/coins";
-import { fireball } from '../abilities/fireball';
-import { lives } from "../abilities/lives";
-import { score } from "../abilities/score";
+import variableJump from "./abilities/variable-jump";
+import { coins } from "./abilities/coins";
+import { fireball } from './abilities/fireball';
+import { lives } from "./abilities/lives";
+import { score } from "./abilities/score";
 import { makeIndicator } from "../ui/indicator";
 
 const powersWithoutSmallSprites = [ 'raccoon' ];
@@ -24,7 +24,7 @@ k.loadShader('invert', null, `
    }
 `);
 
-export function makePlayer(pos, options = optionDefaults) {
+export function makeMario(pos, options = optionDefaults) {
    const opts = Object.assign({}, optionDefaults, options);
    const { char, power, debugText } = opts;
    let { size: _size } = opts;

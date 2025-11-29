@@ -1,4 +1,4 @@
-import k from '../kaplayCtx';
+import k from '../../kaplayCtx';
 
 let fireballs = [];
 
