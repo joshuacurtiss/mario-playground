@@ -181,8 +181,8 @@ export default function() {
    });
    // Updates
    k.onFixedUpdate(() => {
-      // Disable camera movement if player is not alive
-      if (!player.isAlive) return;
+      // Disable camera movement if player is frozen
+      if (player.isFrozen) return;
       // Update HUD time
       hud.time = endTime - k.time();
       if (hud.time<=0) {

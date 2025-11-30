@@ -2,8 +2,11 @@ import k, { scale } from "../kaplayCtx";
 import variableJump from "./abilities/variable-jump";
 import { coins } from "./abilities/coins";
 import { fireball } from './abilities/fireball';
+import { flash } from './abilities/flash';
+import { invulnerable } from './abilities/invulnerable';
 import { lives } from "./abilities/lives";
 import { score } from "./abilities/score";
+import { freeze } from '../shared-abilities/freeze';
 import { makeIndicator } from "../ui/indicator";
 
 const powersWithoutSmallSprites = [ 'raccoon' ];
@@ -15,15 +18,6 @@ const optionDefaults = {
    size: 'sm',
 };
 
-k.loadShader('invert', null, `
-   uniform float u_time;
-   vec4 frag(vec2 pos, vec2 uv, vec4 color, sampler2D tex) {
-      vec4 c = def_frag();
-      float t = (sin(u_time * 15.0) + 1.0) / 2.0;
-      return mix(c, vec4(1.0 - c.r, 1.0 - c.g, 1.0 - c.b, c.a), t);
-   }
-`);
-
 export function makeMario(pos, options = optionDefaults) {
    const opts = Object.assign({}, optionDefaults, options);
    const { char, power, debugText } = opts;
@@ -34,10 +28,6 @@ export function makeMario(pos, options = optionDefaults) {
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
    const swipeSound = k.play('spin', { paused: true, loop: false });
-   let alive = true;
-   let invulnerable = false;
-   let flashing = false;
-   let frozen = false;
    let starPower = false;
    let lastPos = pos.clone();
    let lastPRunCount = 0;
@@ -64,19 +54,24 @@ export function makeMario(pos, options = optionDefaults) {
       k.offscreen({ distance: 7*scale }),
       coins(),
       fireball(),
+      flash(),
+      invulnerable(),
       lives(),
       score(),
+      freeze(),
       variableJump(),
       'player',
       {
          die() {
-            if (!alive || invulnerable) return;
+            if (this.isFrozen || this.isInvulnerable) return;
             this.trigger('die');
             this.size = 'sm'; // Size is always small on death
-            this.isStatic = true;
-            this.vel = k.vec2(0, 0);
-            this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
-            alive = false;
+            this.freeze(2.6, { onDone: ()=>{
+               this.isFrozen = true;
+               this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
+               this.play(`die-${_size}`);
+               this.jump(jumpForces.lg);
+            }});
             this.z = 1000;
             runSound.stop();
             skidSound.stop();
@@ -84,10 +79,6 @@ export function makeMario(pos, options = optionDefaults) {
             this.play(`die-${_size}`);
             this.opacity = 1;
             this.scaleBy(1.2);
-            k.wait(2.6, () => {
-               this.isStatic = false;
-               this.jump(jumpForces.lg);
-            });
          },
          get size() {
             return _size;
@@ -119,48 +110,26 @@ export function makeMario(pos, options = optionDefaults) {
             // Some powers can't be small because they don't have the sprites
             if (powersWithoutSmallSprites.includes(val) && this.size==='sm') this.size = 'lg';
          },
-         get isAlive() {
-            return alive;
-         },
-         get isFrozen() {
-            return frozen;
-         },
-         get isInvulnerable() {
-            return invulnerable;
-         },
-         set isInvulnerable(val) {
-            invulnerable = val;
-         },
          grow() {
-            if (!alive || frozen) return;
+            if (this.isFrozen) return;
             k.play('powerup');
             if (_size==='lg') return;
-            frozen = true;
-            const vel = this.vel.clone();
-            this.isStatic = true;
-            this.vel = k.vec2(0, 0);
-            this.play('grow', { speed: 20 });
-            k.wait(1, ()=>{
+            this.freeze(1, { onDone: ()=>{
                this.stop();
-               this.isStatic = false;
-               frozen = false;
-               this.vel = vel.scale(1.1);
+               this.vel = this.vel.scale(1.1);
                this.size = 'lg';
-            });
+            }});
+            this.play('grow', { speed: 20 });
          },
          hurt() {
-            if (invulnerable) return;
+            if (this.isInvulnerable) return;
             this.trigger('hurt');
             if (_size==='sm') {
                this.die();
                return;
             }
-            invulnerable = true;
-            frozen = true;
-            const vel = this.vel.clone();
-            this.isStatic = true;
-            this.vel = k.vec2(0, 0);
-            k.wait(2.5, ()=>invulnerable = false);
+            this.invulnerable(2.5);
+            this.freeze(0.5, { onDone: ()=>this.power = 'normal' });
             if (this.power === 'normal') {
                // When normal, player shrinks
                k.play('hurt');
@@ -180,13 +149,6 @@ export function makeMario(pos, options = optionDefaults) {
                // Other powers (like fire): Just play hurt sound
                k.play('hurt');
             }
-            // When done hurting, unfreeze player and restore velocity
-            k.wait(0.5, ()=>{
-               this.power = 'normal';
-               this.isStatic = false;
-               this.vel = vel.scale(0.9);
-               frozen = false;
-            });
          },
          oneUp() {
             this.lives += 1;
@@ -194,7 +156,7 @@ export function makeMario(pos, options = optionDefaults) {
             makeIndicator(this.pos.sub(0, this.area.shape.height*this.scale.y-this.area.shape.pos.y*this.scale.y), { sprite: 'ui-1up' });
          },
          handleCollideEnemy(enemy, col) {
-            if (!alive || frozen || !enemy.isAlive) return;
+            if (this.isFrozen || enemy.isFrozen) return;
             // Must hit top part of enemy  with downward velocity to squash
             const thresholdY = enemy.pos.y - enemy.area.shape.pos.y - enemy.area.shape.height / 2;
             // But star power comes first. Enemy just dies with no bounce if star power.
@@ -220,20 +182,20 @@ export function makeMario(pos, options = optionDefaults) {
                   k.lifespan(0.25),
                ])
                enemy.die(this);
-            } else if (!invulnerable) {
+            } else if (!this.isInvulnerable) {
                enemy.freeze(0.7);
                this.hurt();
             }
          },
          handleCollideCollectible(item, col) {
             col.preventResolution();
-            if (!this.isAlive) return;
+            if (this.isFrozen) return;
             this.trigger('collect', item);
          },
          add() {
             this.onButtonPress('turbo', ()=>{
-               // Never act if not alive or frozen
-               if (!alive || frozen) return;
+               // Never act if frozen
+               if (this.isFrozen) return;
                // Raccoon should swipe tail when turbo is pressed
                if (this.power!=='raccoon') return;
                swipeSound.play(0);
@@ -241,8 +203,8 @@ export function makeMario(pos, options = optionDefaults) {
                this.area.shape = makePlayerAreaRect({ swiping: true });
             });
             this.onButtonPress('jump', ()=>{
-               // Never act if not alive or frozen
-               if (!alive || frozen) return;
+               // Never act if frozen
+               if (this.isFrozen) return;
                // Raccoon should float when "jumping" in mid-air
                if (this.power==='raccoon') {
                   if (runTime>=prunThreshold && flyTime<4) {
@@ -287,24 +249,16 @@ export function makeMario(pos, options = optionDefaults) {
                } else if (item.type === 'star') {
                   starPower = true;
                   this.trigger('starPowerChanged', starPower);
-                  flashing = true;
-                  this.use(k.shader("invert", ()=>({ "u_time": k.time() })));
-                  k.wait(8, ()=>{
-                     this.unuse('shader');
-                     flashing = false;
+                  this.flash(8, { onDone: ()=>{
                      starPower = false;
                      this.trigger('starPowerChanged', starPower);
-                  });
+                  }});
                } else if (item.type === 'leaf') {
                   if (this.power === 'raccoon') {
                      k.play('powerup');
                   } else {
                      k.play('transform');
                      this.opacity = 0;
-                     frozen = true;
-                     const vel = this.vel.clone();
-                     this.isStatic = true;
-                     this.vel = k.vec2(0, 0);
                      this.add([
                         k.sprite('items', { anim: 'poof' }),
                         k.anchor('center'),
@@ -312,48 +266,23 @@ export function makeMario(pos, options = optionDefaults) {
                         k.opacity(1),
                         k.lifespan(0.6),
                      ]);
-                     k.wait(0.5, ()=>{
-                        frozen = false;
+                     this.freeze(0.5, { onDone: ()=>{
                         this.power = 'raccoon';
                         this.opacity = 1;
-                        this.isStatic = false;
-                        this.vel = vel;
-                     });
+                     }});
                   }
                } else if (item.type === 'flower') {
                   this.power = 'fire';
                   if (this.size==='lg') k.play('powerup');
                   else this.grow();
-                  if (origPower!=='fire') {
-                     flashing = true;
-                     k.wait(0.9, ()=>flashing = false);
-                  }
+                  if (origPower!=='fire') this.flash(0.9, { invert: false });
                }
                item.collect();
             });
             this.on('1up', this.oneUp);
             this.onFixedUpdate(()=>{
-               // Don't process if dead
-               if (!alive) return;
-               // Invulnerability
-               if (invulnerable) {
-                  this.opacity = k.wave(0.2, 0.8, k.time() * 75);
-               } else if (this.opacity!==1 && this.opacity>0) {
-                  this.opacity = 1;
-               }
-               // Flashing (usually after powerup)
-               if (flashing) {
-                  const t = k.time() * 30;
-                  this.color = k.rgb(
-                     k.wave(128, 255, t),
-                     k.wave(128, 255, t + 2),
-                     k.wave(128, 255, t + 4),
-                  );
-               } else {
-                  this.color = k.rgb(255, 255, 255);
-               }
                // Don't process movement if frozen
-               if (frozen) return;
+               if (this.isFrozen) return;
                // If wagging tail, slow down vertical velocity
                if (this.curAnim()?.startsWith('wag')) {
                   if (this.isGrounded()) this.play(`walk-${_size}`);

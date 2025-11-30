@@ -27,7 +27,7 @@ function handleBlockCollision(_, col) {
 
 function handleEnemyCollision(enemy, col) {
    col.preventResolution();
-   if (!enemy.isAlive) return;
+   if (enemy.isFrozen) return;
    enemy.die(col.source.player);
    makeExplosion(col.source);
    col.source.destroy();
@@ -70,7 +70,7 @@ export function fireball(options = {}) {
       require: [ 'pos' ],
       add() {
          this.onButtonPress('turbo', ()=>{
-            if (!this.isAlive || this.isFrozen) return;
+            if (this.isFrozen) return;
             if (this.power==='fire') {
                // Limit number of fireballs on screen
                if (fireballs.length >= max) return;
