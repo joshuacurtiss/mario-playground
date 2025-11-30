@@ -280,114 +280,114 @@ export function makeMario(pos, options = optionDefaults) {
                item.collect();
             });
             this.on('1up', this.oneUp);
-            this.onFixedUpdate(()=>{
-               // Don't process movement if frozen
-               if (this.isFrozen) return;
-               // If wagging tail, slow down vertical velocity
-               if (this.curAnim()?.startsWith('wag')) {
-                  if (this.isGrounded()) this.play(`walk-${_size}`);
-                  else if (this.vel.y>0) this.vel.y *= 0.6;
-               } else if (this.curAnim()?.startsWith('fly') && !this.isGrounded()) {
-                  flyTime += k.dt();
-               }
-               // Up/down take priority unless you're mid-jump
-               const goUp = this.isGrounded() && k.isButtonDown('up');
-               const goDown = !goUp && k.isButtonDown('down');
-               const goRight = !goUp && !goDown && k.isButtonDown('right');
-               const goLeft = !goUp && !goDown && !goRight && k.isButtonDown('left');
-               const goLeftOrRight = goLeft || goRight;
-               const goTurbo = k.isButtonDown('turbo');
-               const skidding = (goLeft && momentum>0) || (goRight && momentum<0);
-               const lastPosDelta = Math.round(this.pos.dist(lastPos));
-               const moving = lastPosDelta>0;
-               // If running, track run time. You don't get credit while jumping.
-               let runtimeMultiplier = goTurbo && goLeftOrRight && !skidding && this.isGrounded() ? 1 : -1.2;
-               if (skidding || !moving) runtimeMultiplier = -4; // Take runtime credits away faster when skidding
-               if (!this.isGrounded() && runTime===prunThreshold) runtimeMultiplier = 0; // Hold p-run state while in air
-               runTime += k.dt() * runtimeMultiplier;
-               if (runTime<0) runTime = 0;
-               else if (runTime>prunThreshold) runTime = prunThreshold;
-               // Reset jump combo if we touch the ground
-               if (this.isGrounded()) jumpCombo = 0;
-               // Check for p-run
-               const prunning = goTurbo && runTime>=prunThreshold && (goLeftOrRight || !this.isGrounded());
-               const prunCount = Math.ceil(runTime*6 / prunThreshold);
-               if (prunCount!==lastPRunCount) {
-                  lastPRunCount = prunCount;
-                  this.trigger('prunCountChanged', prunCount);
-               }
-               if (prunning !== lastPRunning) {
-                  lastPRunning = prunning;
-                  this.trigger('prunningChanged', prunning);
-               }
-               const maxSpeed = prunning ? speeds.prun : goTurbo ? speeds.turbo : speeds.walk;
-               // Play sound effects
-               if (prunning && runSound.paused) runSound.play();
-               else if (!prunning && !runSound.paused) runSound.stop();
-               if (skidding && this.isGrounded() && skidSound.paused) skidSound.play();
-               else if (!skidding && !skidSound.paused) skidSound.stop();
-               // Handle momentum build up and decay
-               if (!goLeftOrRight) {
-                  // Decay momentum
-                  const momentumDir = momentum>0 ? 1 : -1;
-                  momentum -= speeds.dec * momentumDir;
-                  // Only slow down to zero, don't reverse when decaying
-                  if ((momentumDir>0 && momentum<0) || (momentumDir<0 && momentum>0)) momentum=0;
-               } else {
-                  const goDir = goLeft ? -1 : 1;
-                  // If mid-air, you can change direction a little faster (1.75x)
-                  momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.75);
-                  const momentumDir = momentum>0 ? 1 : -1;
-                  // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
-                  if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
-               }
-               let anim = 'idle';
-               let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
-               if (prunning && this.isGrounded()) anim = 'run';
-               else if (prunning) anim = (starPower && _size==='lg') ? 'somersault' : 'pjump';
-               else if (!this.isGrounded()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
-               else if (skidding) anim = 'skid';
-               else if (goDown) anim = 'duck';
-               else if (moving) anim = 'walk';
-               else if (this.isGrounded() && goUp && this.power !== 'raccoon') anim = 'lookup';
-               // Do not interrupt certain animations until they're done. If they are set to not loop,
-               // when they are done `curAnim()` will report as `null`.
-               const doNotInterruptAnims = [ 'fly', 'swipe', 'throw', 'wag' ];
-               const curAnimRoot = (this.curAnim() ?? '').split('-')[0];
-               if (doNotInterruptAnims.includes(curAnimRoot)) {
-                  // Do not change animation or speed until current is done
-                  anim = curAnimRoot;
-                  animSpeed = 1;
-               }
-               anim += '-' + _size;
-               if (anim.startsWith('somersault')) animSpeed *= 3;
-               // Actually apply calculations to the characters
-               lastPos = this.pos.clone();
-               if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
-               if (this.hasAnim(anim) && this.curAnim()!==anim) {
-                  this.play(anim);
-                  // Support changing player area when anim changes.
-                  this.area.shape = makePlayerAreaRect({ ducking: anim.startsWith('duck') });
-               }
-               if (momentum) {
-                  this.flipX = momentum>0;
-                  this.move(momentum, 0);
-               }
-               // Debug text display
-               if (debugText) {
-                  debugText.text = `Character: ${this.char} (${this.power}, ${this.size})\n`+
-                     `Score: ${this.score}\n`+
-                     `Coins: ${this.coins}\n`+
-                     `Lives: ${this.lives}\n`+
-                     `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
-                     `Momentum: ${momentum.toFixed(0)}\n`+
-                     `Run Time: ${runTime.toFixed(2)}s\n`+
-                     `Fly Time: ${flyTime.toFixed(2)}s\n`+
-                     `P-Meter: ${'>'.repeat(prunCount) + (prunning ? ' P' : '')}\n`+
-                     `Skidding: ${skidding}\n`+
-                     `Anim: ${this.curAnim()} (${this.animSpeed.toFixed(1)}x)`;
-               }
-            });
+         },
+         fixedUpdate() {
+            // Don't process movement if frozen
+            if (this.isFrozen) return;
+            // If wagging tail, slow down vertical velocity
+            if (this.curAnim()?.startsWith('wag')) {
+               if (this.isGrounded()) this.play(`walk-${_size}`);
+               else if (this.vel.y>0) this.vel.y *= 0.6;
+            } else if (this.curAnim()?.startsWith('fly') && !this.isGrounded()) {
+               flyTime += k.dt();
+            }
+            // Up/down take priority unless you're mid-jump
+            const goUp = this.isGrounded() && k.isButtonDown('up');
+            const goDown = !goUp && k.isButtonDown('down');
+            const goRight = !goUp && !goDown && k.isButtonDown('right');
+            const goLeft = !goUp && !goDown && !goRight && k.isButtonDown('left');
+            const goLeftOrRight = goLeft || goRight;
+            const goTurbo = k.isButtonDown('turbo');
+            const skidding = (goLeft && momentum>0) || (goRight && momentum<0);
+            const lastPosDelta = Math.round(this.pos.dist(lastPos));
+            const moving = lastPosDelta>0;
+            // If running, track run time. You don't get credit while jumping.
+            let runtimeMultiplier = goTurbo && goLeftOrRight && !skidding && this.isGrounded() ? 1 : -1.2;
+            if (skidding || !moving) runtimeMultiplier = -4; // Take runtime credits away faster when skidding
+            if (!this.isGrounded() && runTime===prunThreshold) runtimeMultiplier = 0; // Hold p-run state while in air
+            runTime += k.dt() * runtimeMultiplier;
+            if (runTime<0) runTime = 0;
+            else if (runTime>prunThreshold) runTime = prunThreshold;
+            // Reset jump combo if we touch the ground
+            if (this.isGrounded()) jumpCombo = 0;
+            // Check for p-run
+            const prunning = goTurbo && runTime>=prunThreshold && (goLeftOrRight || !this.isGrounded());
+            const prunCount = Math.ceil(runTime*6 / prunThreshold);
+            if (prunCount!==lastPRunCount) {
+               lastPRunCount = prunCount;
+               this.trigger('prunCountChanged', prunCount);
+            }
+            if (prunning !== lastPRunning) {
+               lastPRunning = prunning;
+               this.trigger('prunningChanged', prunning);
+            }
+            const maxSpeed = prunning ? speeds.prun : goTurbo ? speeds.turbo : speeds.walk;
+            // Play sound effects
+            if (prunning && runSound.paused) runSound.play();
+            else if (!prunning && !runSound.paused) runSound.stop();
+            if (skidding && this.isGrounded() && skidSound.paused) skidSound.play();
+            else if (!skidding && !skidSound.paused) skidSound.stop();
+            // Handle momentum build up and decay
+            if (!goLeftOrRight) {
+               // Decay momentum
+               const momentumDir = momentum>0 ? 1 : -1;
+               momentum -= speeds.dec * momentumDir;
+               // Only slow down to zero, don't reverse when decaying
+               if ((momentumDir>0 && momentum<0) || (momentumDir<0 && momentum>0)) momentum=0;
+            } else {
+               const goDir = goLeft ? -1 : 1;
+               // If mid-air, you can change direction a little faster (1.75x)
+               momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.75);
+               const momentumDir = momentum>0 ? 1 : -1;
+               // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
+               if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
+            }
+            let anim = 'idle';
+            let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
+            if (prunning && this.isGrounded()) anim = 'run';
+            else if (prunning) anim = (starPower && _size==='lg') ? 'somersault' : 'pjump';
+            else if (!this.isGrounded()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
+            else if (skidding) anim = 'skid';
+            else if (goDown) anim = 'duck';
+            else if (moving) anim = 'walk';
+            else if (this.isGrounded() && goUp && this.power !== 'raccoon') anim = 'lookup';
+            // Do not interrupt certain animations until they're done. If they are set to not loop,
+            // when they are done `curAnim()` will report as `null`.
+            const doNotInterruptAnims = [ 'fly', 'swipe', 'throw', 'wag' ];
+            const curAnimRoot = (this.curAnim() ?? '').split('-')[0];
+            if (doNotInterruptAnims.includes(curAnimRoot)) {
+               // Do not change animation or speed until current is done
+               anim = curAnimRoot;
+               animSpeed = 1;
+            }
+            anim += '-' + _size;
+            if (anim.startsWith('somersault')) animSpeed *= 3;
+            // Actually apply calculations to the characters
+            lastPos = this.pos.clone();
+            if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
+            if (this.hasAnim(anim) && this.curAnim()!==anim) {
+               this.play(anim);
+               // Support changing player area when anim changes.
+               this.area.shape = makePlayerAreaRect({ ducking: anim.startsWith('duck') });
+            }
+            if (momentum) {
+               this.flipX = momentum>0;
+               this.move(momentum, 0);
+            }
+            // Debug text display
+            if (debugText) {
+               debugText.text = `Character: ${this.char} (${this.power}, ${this.size})\n`+
+                  `Score: ${this.score}\n`+
+                  `Coins: ${this.coins}\n`+
+                  `Lives: ${this.lives}\n`+
+                  `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
+                  `Momentum: ${momentum.toFixed(0)}\n`+
+                  `Run Time: ${runTime.toFixed(2)}s\n`+
+                  `Fly Time: ${flyTime.toFixed(2)}s\n`+
+                  `P-Meter: ${'>'.repeat(prunCount) + (prunning ? ' P' : '')}\n`+
+                  `Skidding: ${skidding}\n`+
+                  `Anim: ${this.curAnim()} (${this.animSpeed.toFixed(1)}x)`;
+            }
          },
       },
    ]);

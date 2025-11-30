@@ -35,14 +35,14 @@ export function makeGoomba(pos, options = optionDefaults) {
       points(opts.points),
       freeze(),
       {
+         fixedUpdate(){
+            if (this.isFrozen) return;
+            this.move(speed * dir, 0);
+            if (!this.isGrounded()) return;
+            if (this.pos.x<boundaryLeft && dir<0) dir = 1;
+            if (this.pos.x>boundaryRight && dir>0) dir = -1;
+         },
          add() {
-            k.onFixedUpdate(()=>{
-               if (this.isFrozen) return;
-               this.move(speed * dir, 0);
-               if (!this.isGrounded()) return;
-               if (this.pos.x<boundaryLeft && dir<0) dir = 1;
-               if (this.pos.x>boundaryRight && dir>0) dir = -1;
-            });
             this.onBeforePhysicsResolve(col=>{
                if (this.isFrozen) return;
                // Ignore collision with other enemies when they fall on top of each other.
