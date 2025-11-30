@@ -150,11 +150,6 @@ export function makeMario(pos, options = optionDefaults) {
                k.play('hurt');
             }
          },
-         oneUp() {
-            this.lives += 1;
-            k.play('1up');
-            makeIndicator(this.pos.sub(0, this.area.shape.height*this.scale.y-this.area.shape.pos.y*this.scale.y), { sprite: 'ui-1up' });
-         },
          handleCollideEnemy(enemy, col) {
             if (this.isFrozen || enemy.isFrozen) return;
             // Must hit top part of enemy  with downward velocity to squash
