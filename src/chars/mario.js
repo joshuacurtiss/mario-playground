@@ -5,9 +5,9 @@ import { fireball } from './abilities/fireball';
 import { flash } from './abilities/flash';
 import { invulnerable } from './abilities/invulnerable';
 import { lives } from "./abilities/lives";
+import { raccoon } from './abilities/raccoon';
 import { score } from "./abilities/score";
 import { freeze } from '../shared-abilities/freeze';
-import { makeIndicator } from "../ui/indicator";
 
 const powersWithoutSmallSprites = [ 'raccoon' ];
 
@@ -27,26 +27,17 @@ export function makeMario(pos, options = optionDefaults) {
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
-   const swipeSound = k.play('spin', { paused: true, loop: false });
    let starPower = false;
    let lastPos = pos.clone();
    let lastPRunCount = 0;
    let lastPRunning = false;
-   let runTime = 0;
-   let flyTime = 0;
+   let _runTime = 0;
    let momentum = 0;
    let jumpCombo = 0;
-   function makePlayerAreaRect(options = {}) {
-      const { ducking, swiping } = Object.assign({}, { ducking: false, swiping: false }, options);
-      if (ducking) return new k.Rect(k.vec2(0, 0), 10, 16);
-      if (swiping) return new k.Rect(k.vec2(0, 0), 24, 27);
-      if (_size === 'sm') return new k.Rect(k.vec2(0, 0), 10, 15);
-      return new k.Rect(k.vec2(0, 0), 13, 27);
-   }
    return k.add([
       k.sprite(`${char}-${power}`, { frame: 0, flipX: true }),
       k.scale(scale),
-      k.area({ shape: makePlayerAreaRect() }),
+      k.area(),
       k.anchor('bot'),
       k.pos(pos),
       k.body(),
@@ -57,11 +48,28 @@ export function makeMario(pos, options = optionDefaults) {
       flash(),
       invulnerable(),
       lives(),
+      raccoon(),
       score(),
       freeze(),
       variableJump(),
       'player',
       {
+         updateAreaRect() {
+            let rect;
+            const anim = this.curAnim() ?? '';
+            if (anim.startsWith('duck')) rect = new k.Rect(k.vec2(0, 0), 10, 16);
+            else if (anim.startsWith('swipe')) rect = new k.Rect(k.vec2(0, 0), 24, 27);
+            else if (this.size === 'sm') rect = new k.Rect(k.vec2(0, 0), 10, 15);
+            else rect = new k.Rect(k.vec2(0, 0), 13, 27);
+            if (
+               !this.area.shape?.pos ||
+               !rect.pos.eq(this.area.shape.pos) ||
+               rect.width !== this.area.shape.width ||
+               rect.height !== this.area.shape.height
+            ) {
+               this.area.shape = rect;
+            }
+         },
          die() {
             if (this.isFrozen || this.isInvulnerable) return;
             this.trigger('die');
@@ -87,13 +95,18 @@ export function makeMario(pos, options = optionDefaults) {
             // If small, can only be normal power
             if (val==='sm' && this.power!=='normal') this.power = 'normal';
             _size = val;
-            this.area.shape = makePlayerAreaRect();
          },
          get char() {
             return this.sprite.split('-')[0];
          },
          get power() {
             return this.sprite.split('-')[1];
+         },
+         get runTime() {
+            return _runTime;
+         },
+         set runTime(val) {
+            _runTime = val;
          },
          setSprite(newSprite) {
             if (this.sprite === newSprite) return;
@@ -188,39 +201,16 @@ export function makeMario(pos, options = optionDefaults) {
             this.trigger('collect', item);
          },
          add() {
-            this.onButtonPress('turbo', ()=>{
-               // Never act if frozen
-               if (this.isFrozen) return;
-               // Raccoon should swipe tail when turbo is pressed
-               if (this.power!=='raccoon') return;
-               swipeSound.play(0);
-               this.play(`swipe-${_size}`, { loop: false, speed: 15 });
-               this.area.shape = makePlayerAreaRect({ swiping: true });
-            });
             this.onButtonPress('jump', ()=>{
                // Never act if frozen
                if (this.isFrozen) return;
-               // Raccoon should float when "jumping" in mid-air
-               if (this.power==='raccoon') {
-                  if (runTime>=prunThreshold && flyTime<4) {
-                     swipeSound.play(0);
-                     this.play(`fly-${_size}`, { loop: false });
-                     if (this.isGrounded()) flyTime = 0;
-                     else this.vel.y = -750;
-                  } else {
-                     runTime = 0;
-                     flyTime = 0;
-                     this.play(`wag-${_size}`, { loop: false, speed: 12 });
-                     if (!this.isGrounded()) swipeSound.play(0);
-                  }
-               }
                // Any other case, only jump if grounded
                if (!this.isGrounded()) return;
                k.play('jump');
                // Implement jump force based on momentum and run state
                let jumpForce = jumpForces[_size];
                if (k.isButtonDown('turbo') && momentum) jumpForce *= 1.1;
-               if (runTime>=prunThreshold) jumpForce *= 1.1;
+               if (this.isPRunning) jumpForce *= 1.1;
                this.variableJump(jumpForce);
             });
             this.onBeforePhysicsResolve(col=>{
@@ -248,24 +238,6 @@ export function makeMario(pos, options = optionDefaults) {
                      starPower = false;
                      this.trigger('starPowerChanged', starPower);
                   }});
-               } else if (item.type === 'leaf') {
-                  if (this.power === 'raccoon') {
-                     k.play('powerup');
-                  } else {
-                     k.play('transform');
-                     this.opacity = 0;
-                     this.add([
-                        k.sprite('items', { anim: 'poof' }),
-                        k.anchor('center'),
-                        k.pos(0, -this.area.shape.height/2),
-                        k.opacity(1),
-                        k.lifespan(0.6),
-                     ]);
-                     this.freeze(0.5, { onDone: ()=>{
-                        this.power = 'raccoon';
-                        this.opacity = 1;
-                     }});
-                  }
                } else if (item.type === 'flower') {
                   this.power = 'fire';
                   if (this.size==='lg') k.play('powerup');
@@ -276,38 +248,43 @@ export function makeMario(pos, options = optionDefaults) {
             });
             this.on('1up', this.oneUp);
          },
+         get controls() {
+            // Up/down take priority unless you're mid-jump
+            const up = this.isGrounded() && k.isButtonDown('up');
+            const down = !up && k.isButtonDown('down');
+            const upOrDown = up || down;
+            const right = !upOrDown && k.isButtonDown('right');
+            const left = !upOrDown && !right && k.isButtonDown('left');
+            const leftOrRight = left || right;
+            const turbo = k.isButtonDown('turbo');
+            return { up, down, left, right, leftOrRight, upOrDown, turbo };
+         },
+         get isPRunning() {
+            const c = this.controls;
+            return c.turbo && _runTime>=prunThreshold && (c.leftOrRight || !this.isGrounded());
+         },
          fixedUpdate() {
             // Don't process movement if frozen
             if (this.isFrozen) return;
-            // If wagging tail, slow down vertical velocity
-            if (this.curAnim()?.startsWith('wag')) {
-               if (this.isGrounded()) this.play(`walk-${_size}`);
-               else if (this.vel.y>0) this.vel.y *= 0.6;
-            } else if (this.curAnim()?.startsWith('fly') && !this.isGrounded()) {
-               flyTime += k.dt();
-            }
-            // Up/down take priority unless you're mid-jump
-            const goUp = this.isGrounded() && k.isButtonDown('up');
-            const goDown = !goUp && k.isButtonDown('down');
-            const goRight = !goUp && !goDown && k.isButtonDown('right');
-            const goLeft = !goUp && !goDown && !goRight && k.isButtonDown('left');
-            const goLeftOrRight = goLeft || goRight;
-            const goTurbo = k.isButtonDown('turbo');
-            const skidding = (goLeft && momentum>0) || (goRight && momentum<0);
+            // Update area rectangle based on current state
+            this.updateAreaRect();
+            // Controls
+            const c = this.controls;
+            const skidding = (c.left && momentum>0) || (c.right && momentum<0);
             const lastPosDelta = Math.round(this.pos.dist(lastPos));
             const moving = lastPosDelta>0;
             // If running, track run time. You don't get credit while jumping.
-            let runtimeMultiplier = goTurbo && goLeftOrRight && !skidding && this.isGrounded() ? 1 : -1.2;
+            let runtimeMultiplier = c.turbo && c.leftOrRight && !skidding && this.isGrounded() ? 1 : -1.2;
             if (skidding || !moving) runtimeMultiplier = -4; // Take runtime credits away faster when skidding
-            if (!this.isGrounded() && runTime===prunThreshold) runtimeMultiplier = 0; // Hold p-run state while in air
-            runTime += k.dt() * runtimeMultiplier;
-            if (runTime<0) runTime = 0;
-            else if (runTime>prunThreshold) runTime = prunThreshold;
+            if (!this.isGrounded() && _runTime===prunThreshold) runtimeMultiplier = 0; // Hold p-run state while in air
+            _runTime += k.dt() * runtimeMultiplier;
+            if (_runTime<0) _runTime = 0;
+            else if (_runTime>prunThreshold) _runTime = prunThreshold;
             // Reset jump combo if we touch the ground
             if (this.isGrounded()) jumpCombo = 0;
             // Check for p-run
-            const prunning = goTurbo && runTime>=prunThreshold && (goLeftOrRight || !this.isGrounded());
-            const prunCount = Math.ceil(runTime*6 / prunThreshold);
+            const prunning = this.isPRunning;
+            const prunCount = Math.ceil(_runTime*6 / prunThreshold);
             if (prunCount!==lastPRunCount) {
                lastPRunCount = prunCount;
                this.trigger('prunCountChanged', prunCount);
@@ -316,21 +293,21 @@ export function makeMario(pos, options = optionDefaults) {
                lastPRunning = prunning;
                this.trigger('prunningChanged', prunning);
             }
-            const maxSpeed = prunning ? speeds.prun : goTurbo ? speeds.turbo : speeds.walk;
+            const maxSpeed = prunning ? speeds.prun : c.turbo ? speeds.turbo : speeds.walk;
             // Play sound effects
             if (prunning && runSound.paused) runSound.play();
             else if (!prunning && !runSound.paused) runSound.stop();
             if (skidding && this.isGrounded() && skidSound.paused) skidSound.play();
             else if (!skidding && !skidSound.paused) skidSound.stop();
             // Handle momentum build up and decay
-            if (!goLeftOrRight) {
+            if (!c.leftOrRight) {
                // Decay momentum
                const momentumDir = momentum>0 ? 1 : -1;
                momentum -= speeds.dec * momentumDir;
                // Only slow down to zero, don't reverse when decaying
                if ((momentumDir>0 && momentum<0) || (momentumDir<0 && momentum>0)) momentum=0;
             } else {
-               const goDir = goLeft ? -1 : 1;
+               const goDir = c.left ? -1 : 1;
                // If mid-air, you can change direction a little faster (1.75x)
                momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.75);
                const momentumDir = momentum>0 ? 1 : -1;
@@ -338,14 +315,14 @@ export function makeMario(pos, options = optionDefaults) {
                if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
             }
             let anim = 'idle';
-            let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (goTurbo ? 3 : 1.2) : 1;
+            let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (c.turbo ? 3 : 1.2) : 1;
             if (prunning && this.isGrounded()) anim = 'run';
             else if (prunning) anim = (starPower && _size==='lg') ? 'somersault' : 'pjump';
             else if (!this.isGrounded()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
             else if (skidding) anim = 'skid';
-            else if (goDown) anim = 'duck';
+            else if (c.down) anim = 'duck';
             else if (moving) anim = 'walk';
-            else if (this.isGrounded() && goUp && this.power !== 'raccoon') anim = 'lookup';
+            else if (this.isGrounded() && c.up && this.power !== 'raccoon') anim = 'lookup';
             // Do not interrupt certain animations until they're done. If they are set to not loop,
             // when they are done `curAnim()` will report as `null`.
             const doNotInterruptAnims = [ 'fly', 'swipe', 'throw', 'wag' ];
@@ -360,11 +337,7 @@ export function makeMario(pos, options = optionDefaults) {
             // Actually apply calculations to the characters
             lastPos = this.pos.clone();
             if (this.animSpeed!==animSpeed) this.animSpeed = animSpeed;
-            if (this.hasAnim(anim) && this.curAnim()!==anim) {
-               this.play(anim);
-               // Support changing player area when anim changes.
-               this.area.shape = makePlayerAreaRect({ ducking: anim.startsWith('duck') });
-            }
+            if (this.hasAnim(anim) && this.curAnim()!==anim) this.play(anim);
             if (momentum) {
                this.flipX = momentum>0;
                this.move(momentum, 0);
@@ -377,8 +350,8 @@ export function makeMario(pos, options = optionDefaults) {
                   `Lives: ${this.lives}\n`+
                   `Pos: ${this.pos.x.toFixed(0)}, ${this.pos.y.toFixed(0)} (Delta: ${lastPosDelta})\n`+
                   `Momentum: ${momentum.toFixed(0)}\n`+
-                  `Run Time: ${runTime.toFixed(2)}s\n`+
-                  `Fly Time: ${flyTime.toFixed(2)}s\n`+
+                  `Run Time: ${this.runTime.toFixed(2)}s\n`+
+                  `Fly Time: ${this.flyTime.toFixed(2)}s\n`+
                   `P-Meter: ${'>'.repeat(prunCount) + (prunning ? ' P' : '')}\n`+
                   `Skidding: ${skidding}\n`+
                   `Anim: ${this.curAnim()} (${this.animSpeed.toFixed(1)}x)`;
