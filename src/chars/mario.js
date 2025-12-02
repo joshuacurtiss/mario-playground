@@ -160,7 +160,7 @@ export function makeMario(pos, options = optionDefaults) {
                   k.lifespan(0.6),
                ]);
             } else {
-               // Other powers (like fire): Just play hurt sound
+               // Other powers: Just play hurt sound
                k.play('hurt');
             }
          },
@@ -224,7 +224,6 @@ export function makeMario(pos, options = optionDefaults) {
             this.onCollide('coin', this.handleCollideCollectible);
             this.onCollide('powerup', this.handleCollideCollectible);
             this.on('collect', (item)=>{
-               const origPower = this.power;
                this.score += item.points;
                if (item.is('coin') || item.is('coinpop')) {
                   this.coins += 1;
@@ -232,11 +231,6 @@ export function makeMario(pos, options = optionDefaults) {
                   this.grow();
                } else if (item.type === '1up') {
                   this.oneUp();
-               } else if (item.type === 'flower') {
-                  this.power = 'fire';
-                  if (this.size==='lg') k.play('powerup');
-                  else this.grow();
-                  if (origPower!=='fire') this.flash(0.9, { invert: false });
                }
                item.collect();
             });

@@ -67,7 +67,7 @@ export function fireball(options = {}) {
    const { max } = Object.assign({}, optionDefaults, options);
    return {
       id: 'fireball',
-      require: [ 'pos' ],
+      require: [ 'pos', 'flash', 'freeze' ],
       add() {
          this.onButtonPress('turbo', ()=>{
             if (this.isFrozen) return;
@@ -78,6 +78,14 @@ export function fireball(options = {}) {
                this.play(`throw-${this.size}`, { loop: false });
                fireballs.push(makeFireball(this));
             }
+         });
+         this.on('collect', (item) => {
+            if (item.type !== 'flower') return false;
+            const origPower = this.power;
+            this.power = 'fire';
+            if (this.size==='lg') k.play('powerup');
+            else this.grow();
+            if (origPower!=='fire') this.flash(0.9, { invert: false });
          });
       },
    };
