@@ -7,6 +7,7 @@ import { invulnerable } from './abilities/invulnerable';
 import { lives } from "./abilities/lives";
 import { raccoon } from './abilities/raccoon';
 import { score } from "./abilities/score";
+import { star } from './abilities/star';
 import { freeze } from '../shared-abilities/freeze';
 
 const powersWithoutSmallSprites = [ 'raccoon' ];
@@ -27,7 +28,6 @@ export function makeMario(pos, options = optionDefaults) {
    const jumpForces = { sm: 1300, lg: 1350 };
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
-   let starPower = false;
    let lastPos = pos.clone();
    let lastPRunCount = 0;
    let lastPRunning = false;
@@ -50,6 +50,7 @@ export function makeMario(pos, options = optionDefaults) {
       lives(),
       raccoon(),
       score(),
+      star(),
       freeze(),
       variableJump(),
       'player',
@@ -168,7 +169,7 @@ export function makeMario(pos, options = optionDefaults) {
             // Must hit top part of enemy  with downward velocity to squash
             const thresholdY = enemy.pos.y - enemy.area.shape.pos.y - enemy.area.shape.height / 2;
             // But star power comes first. Enemy just dies with no bounce if star power.
-            if (starPower) {
+            if (this.hasStarPower) {
                enemy.die(this);
             } else if ((this.pos.y <= thresholdY) && this.vel.y > 0) {
                jumpCombo = !jumpCombo ? 1 : jumpCombo * 2;
@@ -231,13 +232,6 @@ export function makeMario(pos, options = optionDefaults) {
                   this.grow();
                } else if (item.type === '1up') {
                   this.oneUp();
-               } else if (item.type === 'star') {
-                  starPower = true;
-                  this.trigger('starPowerChanged', starPower);
-                  this.flash(8, { onDone: ()=>{
-                     starPower = false;
-                     this.trigger('starPowerChanged', starPower);
-                  }});
                } else if (item.type === 'flower') {
                   this.power = 'fire';
                   if (this.size==='lg') k.play('powerup');
@@ -317,8 +311,8 @@ export function makeMario(pos, options = optionDefaults) {
             let anim = 'idle';
             let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (c.turbo ? 3 : 1.2) : 1;
             if (prunning && this.isGrounded()) anim = 'run';
-            else if (prunning) anim = (starPower && _size==='lg') ? 'somersault' : 'pjump';
-            else if (!this.isGrounded()) anim = (starPower && _size==='lg') ? 'somersault' : 'jump';
+            else if (prunning) anim = (this.hasStarPower && _size==='lg') ? 'somersault' : 'pjump';
+            else if (!this.isGrounded()) anim = (this.hasStarPower && _size==='lg') ? 'somersault' : 'jump';
             else if (skidding) anim = 'skid';
             else if (c.down) anim = 'duck';
             else if (moving) anim = 'walk';
