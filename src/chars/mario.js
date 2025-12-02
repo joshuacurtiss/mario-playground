@@ -5,6 +5,7 @@ import { fireball } from './abilities/fireball';
 import { flash } from './abilities/flash';
 import { invulnerable } from './abilities/invulnerable';
 import { lives } from "./abilities/lives";
+import { mushroom } from './abilities/mushroom';
 import { raccoon } from './abilities/raccoon';
 import { score } from "./abilities/score";
 import { star } from './abilities/star';
@@ -48,6 +49,7 @@ export function makeMario(pos, options = optionDefaults) {
       flash(),
       invulnerable(),
       lives(),
+      mushroom(),
       raccoon(),
       score(),
       star(),
@@ -123,17 +125,6 @@ export function makeMario(pos, options = optionDefaults) {
             this.setSprite(`${this.char}-${val}`);
             // Some powers can't be small because they don't have the sprites
             if (powersWithoutSmallSprites.includes(val) && this.size==='sm') this.size = 'lg';
-         },
-         grow() {
-            if (this.isFrozen) return;
-            k.play('powerup');
-            if (_size==='lg') return;
-            this.freeze(1, { onDone: ()=>{
-               this.stop();
-               this.vel = this.vel.scale(1.1);
-               this.size = 'lg';
-            }});
-            this.play('grow', { speed: 20 });
          },
          hurt() {
             if (this.isInvulnerable) return;
@@ -227,8 +218,6 @@ export function makeMario(pos, options = optionDefaults) {
                this.score += item.points;
                if (item.is('coin') || item.is('coinpop')) {
                   this.coins += 1;
-               } else if (item.type === 'mushroom') {
-                  this.grow();
                } else if (item.type === '1up') {
                   this.oneUp();
                }
