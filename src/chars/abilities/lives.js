@@ -19,5 +19,12 @@ export function lives(initialLives=5) {
          k.play('1up');
          makeIndicator(this.pos.sub(0, this.area.shape.height*this.scale.y-this.area.shape.pos.y*this.scale.y), { sprite: 'ui-1up' });
       },
+      add() {
+         this.on('1up', this.oneUp);
+         this.on('collect', (item)=>{
+            if (item.type !== '1up') return;
+            this.oneUp();
+         });
+      },
   };
 }

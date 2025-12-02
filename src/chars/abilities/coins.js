@@ -13,5 +13,11 @@ export function coins(initialCoins=0) {
          }
          this.trigger('coinsChanged', _coins);
       },
+      add() {
+         this.on('collect', (item)=>{
+            if (!item.is('coin') && !item.is('coinpop')) return;
+            this.coins += 1;
+         });
+      }
   };
 }

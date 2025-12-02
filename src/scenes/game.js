@@ -89,9 +89,7 @@ export default function() {
    hud.time = endTime - k.time();
 
    // Player
-   const player = makeMario(k.vec2(k.randi(7, 37)*scale, 0), {
-      debugText: playerDebugText,
-   });
+   const player = makeMario(k.vec2(k.randi(7, 37)*scale, 0));
    player.on('die', () => {
       // Fade to black and go home
       k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
@@ -181,6 +179,8 @@ export default function() {
    });
    // Updates
    k.onFixedUpdate(() => {
+      // Update debug text
+      if (debug) playerDebugText.text = player.debug;
       // Disable camera movement if player is frozen
       if (player.isFrozen) return;
       // Update HUD time
