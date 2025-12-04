@@ -135,9 +135,8 @@ export default function() {
       if (k.get('goomba').length < 20) {
          makeGoomba(k.vec2(k.randi(150, 650)*scale, 0), {
             char: k.randi() ? 'goomba' : 'goombared',
-            boundaryLeft: 56*scale,
-            boundaryRight: 693*scale,
-            dir: k.randi() ? -1 : 1,
+            patrol: { boundary: { left: 56*scale, right: 693*scale } },
+            move: { dir: k.randi() ? -1 : 1 },
          });
       }
       k.wait(k.rand(1.5, 3), spawnGoomba);
@@ -180,7 +179,7 @@ export default function() {
    // Updates
    k.onFixedUpdate(() => {
       // Update debug text
-      if (debug) playerDebugText.text = player.debug;
+      if (debug && playerDebugText) playerDebugText.text = player.debug;
       // Disable camera movement if player is frozen
       if (player.isFrozen) return;
       // Update HUD time
