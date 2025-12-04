@@ -1,14 +1,25 @@
 import k, { scale } from '../kaplayCtx';
-import { breaks } from './abilities/breaks';
+import type { GameObj, SpriteComp, PosComp, AreaComp, BodyComp, ScaleComp, Vec2 } from 'kaplay';
+import { breaks, BreaksComp } from './abilities/breaks';
 import { bump } from './abilities/bump';
 import { items } from './abilities/items';
 
-const optionDefaults = {
-   type: 'normal', // 'normal' | 'ice'
-   items: null, // Item(s) to spawn when bumped
+// TODO: Needs to add the custom comp types (bump, items) once they're authored
+export type Brick = GameObj<SpriteComp & PosComp & AreaComp & BodyComp & ScaleComp & BreaksComp>;
+
+export type BrickType = 'normal' | 'ice';
+
+export interface BrickOpt {
+   type?: BrickType;
+   // TODO: Use more specific type that encompasses all possible items in blocks
+   items?: GameObj | GameObj[];
+}
+
+const optionDefaults: BrickOpt = {
+   type: 'normal',
 };
 
-export function makeBrick(pos, options = {}) {
+export function makeBrick(pos: Vec2, options: BrickOpt = {}): Brick {
    let { type, items: itemsArray } = Object.assign({}, optionDefaults, options);
    return k.add([
       k.sprite('items', { anim: `brick-${type}` }),

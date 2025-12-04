@@ -1,23 +1,29 @@
 import k, { scale } from '../../kaplayCtx';
+import { Comp } from 'kaplay';
+import { Brick } from '../brick';
 
-export function breaks() {
+export interface BreaksComp extends Comp {
+   break: Function;
+}
+
+export function breaks(): BreaksComp {
    return {
       id: 'breaks',
       require: [ 'sprite', 'pos', 'body' ],
-      add() {
+      add(this: Brick) {
          this.onHeadbutted(obj=>{
             // Only respond to player headbutts
             if (!obj.is('player')) return;
             if (obj.size !== 'lg') return;
             // If it is an "empty" sprite, do not bump. We handle it this way because some things like
             // a note block or a brick can be bumped when empty. But a `block-empty` never will.
-            if (this.curAnim().endsWith('empty')) return;
+            if (this.curAnim()?.endsWith('empty')) return;
             this.break();
          });
       },
-      break() {
+      break(this: Brick) {
          this.trigger('break');
-         const anim = this.curAnim().replace('brick', 'brickbreak');
+         const anim = this.curAnim()?.replace('brick', 'brickbreak');
          for ( let i=0 ; i<4 ; i++ ) {
             const piece = k.add([
                k.sprite('items', { anim }),
