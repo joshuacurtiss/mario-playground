@@ -1,6 +1,7 @@
 import k, { debug, scale } from '../kaplayCtx';
+import { BodyComp, GameObj, PosComp } from 'kaplay';
 import { makeFadeIn, makeFadeOut } from '../ui/fader';
-import { makeCoin } from '../items/coin';
+import { makeCoin, makeCoinWithBody } from '../items/coin';
 import { makeMario } from '../chars/mario';
 import { makeGoomba } from '../enemies/goomba';
 import { makeCoinPop } from '../items/coinpop';
@@ -117,7 +118,7 @@ export default function() {
          } else {
             makeBlock(pos, {
                type: 'question',
-               items: i%3===1 ? Array(8).fill().map(()=>makeCoinPop(pos)) : makePowerup(pos, { type: k.choose(['star', 'flower', 'leaf', 'mushroom', '1up']) }),
+               items: i%3===1 ? Array(8).fill(0).map(()=>makeCoinPop(pos)) : makePowerup(pos, { type: k.choose(['star', 'flower', 'leaf', 'mushroom', '1up']) }),
             });
          }
       }
@@ -126,7 +127,7 @@ export default function() {
       for (let i=0; i<4; i++) {
          const pos = k.vec2(deltaX*scale+i*16*scale, ground.pos.y-3*16*scale);
          makeBrick(pos);
-         makeCoin(pos.sub(0, 16*scale), { hasBody: true });
+         makeCoinWithBody(pos.sub(0, 16*scale));
       }
    });
 
@@ -135,9 +136,8 @@ export default function() {
       if (k.get('goomba').length < 20) {
          makeGoomba(k.vec2(k.randi(150, 650)*scale, 0), {
             char: k.randi() ? 'goomba' : 'goombared',
-            boundaryLeft: 56*scale,
-            boundaryRight: 693*scale,
-            dir: k.randi() ? -1 : 1,
+            patrol: { boundary: { left: 56*scale, right: 693*scale } },
+            move: { dir: k.randi() ? -1 : 1 },
          });
       }
       k.wait(k.rand(1.5, 3), spawnGoomba);
@@ -180,7 +180,7 @@ export default function() {
    // Updates
    k.onFixedUpdate(() => {
       // Update debug text
-      if (debug) playerDebugText.text = player.debug;
+      if (debug && playerDebugText) playerDebugText.text = player.debug;
       // Disable camera movement if player is frozen
       if (player.isFrozen) return;
       // Update HUD time
@@ -195,10 +195,10 @@ export default function() {
             k.fixed(),
             k.z(200),
             {
-               add() {
+               add(this: GameObj<BodyComp>) {
                   this.vel = k.vec2(0, -500*scale);
                },
-               update() {
+               update(this: GameObj<BodyComp & PosComp>) {
                   if (this.pos.y<fullHeight*0.3) this.vel.y = 0;
                }
             }
