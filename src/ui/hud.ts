@@ -1,12 +1,17 @@
 import k, { scale } from '../kaplayCtx';
+import type { GameObj, PosComp, SpriteComp } from 'kaplay';
+
+type DigitObj = GameObj<PosComp | SpriteComp>;
+type SingleDigit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+type PlayerName = 'mario' | 'luigi';
 
 export function makeHUD() {
-   let _world;
-   let _player;
-   let _lives;
-   let _score;
-   let _time;
-   let _coins;
+   let _world: SingleDigit;
+   let _player: PlayerName;
+   let _lives: number;
+   let _score: number;
+   let _time: number;
+   let _coins: number;
    let _p_count = 0;
    let _p_dash = false;
    const container = k.make([
@@ -80,13 +85,15 @@ export function makeHUD() {
       k.anchor('botleft'),
       k.opacity(1),
    ]);
-   const makeDigit = (x, y) => {
+   const makeDigitObj = (x: number, y: number): DigitObj => {
       return dashboard.add([k.sprite('hud-digits', {frame: 10}), k.pos(x, y)]);
    };
-   const makeDigitArray = (x, y, count) => {
-      return Array(count).fill(0).map((_, i)=>makeDigit(x + i*8, y));
+   const makeDigitObjArray = (x: number, y: number, count: number): DigitObj[] => {
+      return Array(count).fill(0).map((_, i)=>makeDigitObj(x + i*8, y));
    };
-   const setDigits = (arr, val, pad = ' ') => {
+   const setDigits = (arr: DigitObj[], val: number, pad: string = ' ') => {
+      // Ensure pad is valid: Space or digit
+      if (' 0123456789'.indexOf(pad) < 0) pad = ' ';
       let str = val.toString().padStart(arr.length, pad);
       if (str.length>arr.length) str = str.slice(-arr.length);
       for (let i=0 ; i<arr.length ; i++) {
@@ -95,11 +102,11 @@ export function makeHUD() {
          if (arr[i].frame !== frame) arr[i].frame = frame;
       }
    };
-   const worldDigit = makeDigit(35, -21);
-   const livesDigits = makeDigitArray(27, -13, 2);
-   const scoreDigits = makeDigitArray(51, -13, 7);
-   const timeDigits = makeDigitArray(123, -13, 3);
-   const coinDigits = makeDigitArray(131, -21, 2);
+   const worldDigit = makeDigitObj(35, -21);
+   const livesDigits = makeDigitObjArray(27, -13, 2);
+   const scoreDigits = makeDigitObjArray(51, -13, 7);
+   const timeDigits = makeDigitObjArray(123, -13, 3);
+   const coinDigits = makeDigitObjArray(131, -21, 2);
    const pCountArrows = Array(6).fill(0).map((_, i) => {
       return dashboard.add([
          k.sprite('hud-digits', { frame: 11 }),
