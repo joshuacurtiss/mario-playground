@@ -1,4 +1,12 @@
-export function points(points = 0, threshold1up = 10000) {
+import { Comp } from 'kaplay';
+
+export interface PointsComp extends Comp {
+   get isOneUp(): boolean;
+   get points(): number;
+   set points(val: number);
+}
+
+export function points(points = 0, threshold1up = 10000): PointsComp {
    let _points = points;
    return {
       id: 'points',

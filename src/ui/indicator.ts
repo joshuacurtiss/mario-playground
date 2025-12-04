@@ -1,12 +1,13 @@
 import k, { scale } from "../kaplayCtx";
+import { Vec2 } from "kaplay";
 
-const optionDefaults = {
-   msg: null,
-   sprite: null,
-   anim: null,
+interface IndicatorOpt {
+   msg?: string;
+   sprite?: string;
+   anim?: string;
 }
 
-export function makeIndicator(pos, options = optionDefaults) {
+export function makeIndicator(pos: Vec2, options: IndicatorOpt = {}) {
    const { msg, sprite, anim } = options;
    const indicator = k.add([
       msg ? k.text(msg, { size: 20, letterSpacing: -3 }) : '',
