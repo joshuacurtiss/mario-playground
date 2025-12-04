@@ -1,16 +1,22 @@
 import k from '../../kaplayCtx';
+import { Comp } from 'kaplay';
+import { Char } from '../index';
 
-export function mushroom() {
+export interface MushroomComp extends Comp {
+   grow(): void;
+}
+
+export function mushroom(): MushroomComp {
    return {
       id: 'mushroom',
-      require: [ 'pos', 'freeze' ],
-      add() {
+      require: [ 'body', 'pos', 'freeze' ],
+      add(this: Char) {
          this.on('collect', (item) => {
             if (item.type !== 'mushroom') return false;
             this.grow();
          });
       },
-      grow() {
+      grow(this: Char) {
          if (this.isFrozen) return;
          k.play('powerup');
          if (this.size==='lg') return;

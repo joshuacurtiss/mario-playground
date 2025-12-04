@@ -1,10 +1,55 @@
 import k, { scale } from '../../kaplayCtx';
+import { Collision, Comp, GameObj, Rect } from 'kaplay';
+import { Char } from '../index';
+import { Enemy, isEnemy } from '../../enemies';
+import { isRect } from '../../lib/type-guards';
+import { CollectibleItem } from '../../items';
+
+export const powers = [ 'normal', 'fire', 'raccoon' ] as const;
+export type Power = typeof powers[number];
+export function isPower(val: string): val is Power {
+   return (powers as unknown as string[]).includes(val);
+}
+
+export const sizes = [ 'sm', 'lg' ] as const;
+export type Size = typeof sizes[number];
+export function isSize(val: string): val is Size {
+   return (sizes as unknown as string[]).includes(val);
+}
+
+export const charNames = [ 'mario' ] as const;
+export type CharName = typeof charNames[number];
+export function isCharName(val: string): val is CharName {
+   return (charNames as unknown as string[]).includes(val);
+}
 
 // Constants
-const powersWithoutSmallSprites = [ 'raccoon' ];
+const powersWithoutSmallSprites: Power[] = [ 'raccoon' ];
+
+export interface GeneralCompOpt {
+   speeds: {
+      walk: number;
+      turbo: number;
+      prun: number;
+      dec: number;
+      inc: number;
+   },
+   jumpForces: {
+      sm: number;
+      lg: number;
+   },
+   areas: {
+      duck: Rect;
+      swipe: Rect;
+      sm: Rect;
+      lg: Rect;
+   },
+   prunThreshold: number;
+   size: Size;
+}
 
 // Defaults are for Mario
-const optionDefaults = {
+const optionDefaults: GeneralCompOpt = {
    speeds: {
       walk: 87,
       turbo: 150,
@@ -26,14 +71,46 @@ const optionDefaults = {
    size: 'sm',
 };
 
-export function general(options = optionDefaults) {
+export interface GeneralComp extends Comp {
+   get size(): Size;
+   set size(val: Size);
+   get char(): CharName;
+   set char(val: CharName);
+   get power(): Power;
+   set power(val: Power);
+   get runTime(): number;
+   set runTime(val: number);
+   get debug(): string;
+   getControls(): {
+      up: boolean;
+      down: boolean;
+      left: boolean;
+      right: boolean;
+      leftOrRight: boolean;
+      upOrDown: boolean;
+      turbo: boolean;
+   };
+   isPRunning(): boolean;
+   getSprite(): string;
+   setSprite(newSprite: string): void;
+   updateAreaRect(): void;
+   die(): void;
+   hurt(): void;
+   handleCollideEnemy(enemy: Enemy, col?: Collision): void;
+   handleCollideCollectible(item: GameObj, col?: Collision): void;
+   handleCollectItem(item: CollectibleItem): void;
+   handlePhysics(col: Collision): void;
+   handleJump(): void;
+}
+
+export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
    const opts = Object.assign({}, optionDefaults, options);
    let { size: _size } = opts;
    const { areas, jumpForces, prunThreshold } = opts;
    const skidSound = k.play('skid', { paused: true, loop: true, speed: 0.9, volume: 0.6 });
    const runSound = k.play('p-meter', { paused: true, loop: true });
    const speeds = { ...opts.speeds };
-   Object.keys(speeds).forEach(key=>speeds[key] *= scale);
+   (Object.keys(speeds) as (keyof GeneralCompOpt['speeds'])[]).forEach(key => speeds[key] *= scale);
    let lastPos = k.vec2(0);
    let lastPRunCount = 0;
    let lastPRunning = false;
@@ -53,7 +130,8 @@ export function general(options = optionDefaults) {
          _size = val;
       },
       get char() {
-         return this.sprite.split('-')[0];
+         const charName = this.getSprite().split('-')[0];
+         return isCharName(charName) ? charName : 'mario';
       },
       set char(val) {
          this.setSprite(`${val}-${this.power}`);
@@ -61,7 +139,8 @@ export function general(options = optionDefaults) {
          if (powersWithoutSmallSprites.includes(this.power) && this.size==='sm') this.size = 'lg';
       },
       get power() {
-         return this.sprite.split('-')[1];
+         const power = this.getSprite().split('-')[1];
+         return isPower(power) ? power : 'normal';
       },
       set power(val) {
          this.setSprite(`${this.char}-${val}`);
@@ -74,7 +153,7 @@ export function general(options = optionDefaults) {
       set runTime(val) {
          _runTime = val;
       },
-      get controls() {
+      getControls(this: Char) {
          // Up/down take priority unless you're mid-jump
          const up = this.isGrounded() && k.isButtonDown('up');
          const down = !up && k.isButtonDown('down');
@@ -85,27 +164,30 @@ export function general(options = optionDefaults) {
          const turbo = k.isButtonDown('turbo');
          return { up, down, left, right, leftOrRight, upOrDown, turbo };
       },
-      get isPRunning() {
-         const c = this.controls;
+      isPRunning(this: Char) {
+         const c = this.getControls();
          return c.turbo && _runTime>=prunThreshold && (c.leftOrRight || !this.isGrounded());
       },
       get debug() {
          return _debug;
       },
-      setSprite(newSprite) {
+      getSprite(this: Char): string {
+         return this.sprite;
+      },
+      setSprite(this: Char, newSprite: string) {
          if (this.sprite === newSprite) return;
          const { flipX, frame } = this;
          this.use(k.sprite(newSprite, { frame, flipX }));
       },
-      updateAreaRect() {
-         let rect;
+      updateAreaRect(this: Char) {
+         let rect = areas.lg;
          const anim = this.curAnim() ?? '';
          if (anim.startsWith('duck')) rect = areas.duck;
          else if (anim.startsWith('swipe')) rect = areas.swipe;
          else if (this.size === 'sm') rect = areas.sm;
-         else rect = areas.lg;
          if (
-            !this.area.shape?.pos ||
+            !this.area.shape ||
+            !isRect(this.area.shape) ||
             !rect.pos.eq(this.area.shape.pos) ||
             rect.width !== this.area.shape.width ||
             rect.height !== this.area.shape.height
@@ -113,7 +195,7 @@ export function general(options = optionDefaults) {
             this.area.shape = rect.clone();
          }
       },
-      die() {
+      die(this: Char) {
          if (this.isFrozen || this.isInvulnerable) return;
          this.trigger('die');
          this.size = 'sm'; // Size is always small on death
@@ -131,7 +213,7 @@ export function general(options = optionDefaults) {
          this.opacity = 1;
          this.scaleBy(1.2);
       },
-      hurt() {
+      hurt(this: Char) {
          if (this.isInvulnerable) return;
          this.trigger('hurt');
          if (this.size==='sm') {
@@ -148,10 +230,11 @@ export function general(options = optionDefaults) {
          } else if (['raccoon', 'frog', 'hammer', 'tanooki'].includes(this.power)) {
             // For these powers, transform with a poof
             k.play('transform');
+            const shape = this.area.shape && isRect(this.area?.shape) ? this.area.shape : new k.Rect(k.vec2(0,0),0,0);
             this.add([
                k.sprite('items', { anim: 'poof' }),
                k.anchor('center'),
-               k.pos(0, -this.area.shape.height/2),
+               k.pos(0, -shape.height/2),
                k.opacity(1),
                k.lifespan(0.6),
             ]);
@@ -160,10 +243,12 @@ export function general(options = optionDefaults) {
             k.play('hurt');
          }
       },
-      handleCollideEnemy(enemy, _col) {
+      handleCollideEnemy(this: Char, enemy, _col) {
          if (this.isFrozen || enemy.isFrozen) return;
+         const charRect = this.area.shape && isRect(this.area.shape) ? this.area.shape : new k.Rect(k.vec2(0),0,0);
+         const enemyRect = enemy.area.shape && isRect(enemy.area.shape) ? enemy.area.shape : new k.Rect(k.vec2(0),0,0);
          // Must hit top part of enemy  with downward velocity to squash
-         const thresholdY = enemy.pos.y - enemy.area.shape.pos.y - enemy.area.shape.height / 2;
+         const thresholdY = enemy.pos.y - enemyRect.pos.y - enemyRect.height / 2;
          // But star power comes first. Enemy just dies with no bounce if star power.
          if (this.hasStarPower) {
             enemy.die(this);
@@ -177,7 +262,7 @@ export function general(options = optionDefaults) {
                if (this.isJumping()) return;
                this.variableJump(jumpForces[this.size]*1.1);
             });
-         } else if (this.curAnim()?.startsWith('swipe') && enemy.pos.y > this.pos.y - this.area.shape.height/2) {
+         } else if (this.curAnim()?.startsWith('swipe') && enemy.pos.y > this.pos.y - charRect.height/2) {
             k.add([
                k.sprite('items', { anim: 'strike', animSpeed: 2 }),
                k.scale(this.scale),
@@ -192,23 +277,23 @@ export function general(options = optionDefaults) {
             this.hurt();
          }
       },
-      handleCollideCollectible(item, col) {
-         col.preventResolution();
+      handleCollideCollectible(this: Char, item, col) {
+         col?.preventResolution();
          if (this.isFrozen) return;
          this.trigger('collect', item);
       },
-      handleCollectItem(item) {
+      handleCollectItem(this: Char, item) {
          this.score += item.points;
          item.collect();
       },
       handlePhysics(col) {
          // There's only special logic for touching enemies
-         if (col.target.is('enemy')) {
+         if (isEnemy(col.target)) {
             col.preventResolution();
             this.handleCollideEnemy(col.target, col);
          }
       },
-      handleJump() {
+      handleJump(this: Char) {
          // Never act if frozen
          if (this.isFrozen) return;
          // Any other case, only jump if grounded
@@ -217,23 +302,23 @@ export function general(options = optionDefaults) {
          // Implement jump force based on momentum and run state
          let jumpForce = jumpForces[_size];
          if (k.isButtonDown('turbo') && momentum) jumpForce *= 1.1;
-         if (this.isPRunning) jumpForce *= 1.1;
+         if (this.isPRunning()) jumpForce *= 1.1;
          this.variableJump(jumpForce);
       },
-      add() {
+      add(this: Char) {
          this.onBeforePhysicsResolve(this.handlePhysics);
          this.onButtonPress('jump', this.handleJump);
          this.onCollide('coin', this.handleCollideCollectible);
          this.onCollide('powerup', this.handleCollideCollectible);
          this.on('collect', this.handleCollectItem);
       },
-      fixedUpdate() {
+      fixedUpdate(this: Char) {
          // Don't process movement if frozen
          if (this.isFrozen) return;
          // Update area rectangle based on current state
          this.updateAreaRect();
          // Controls
-         const c = this.controls;
+         const c = this.getControls();
          const skidding = (c.left && momentum>0) || (c.right && momentum<0);
          const lastPosDelta = Math.round(this.pos.dist(lastPos));
          const moving = lastPosDelta>0;
@@ -247,7 +332,7 @@ export function general(options = optionDefaults) {
          // Reset jump combo if we touch the ground
          if (this.isGrounded()) jumpCombo = 0;
          // Check for p-run
-         const prunning = this.isPRunning;
+         const prunning = this.isPRunning();
          const prunCount = Math.ceil(_runTime*6 / prunThreshold);
          if (prunCount!==lastPRunCount) {
             lastPRunCount = prunCount;

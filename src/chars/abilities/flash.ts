@@ -1,4 +1,6 @@
 import k from '../../kaplayCtx';
+import { Comp } from 'kaplay';
+import { Char } from '../index';
 
 k.loadShader('invert', null, `
    uniform float u_time;
@@ -9,16 +11,24 @@ k.loadShader('invert', null, `
    }
 `);
 
-const flashOptionDefaults = {
-   invert: true,
-   onDone: null,
+export interface FlashOpt {
+   invert?: boolean;
+   onDone?: Function;
 }
 
-export function flash() {
+const flashOptionDefaults: FlashOpt = {
+   invert: true,
+}
+
+export interface FlashComp extends Comp {
+   flash(duration: number, options?: FlashOpt): void;
+}
+
+export function flash(): FlashComp {
    let flashing = false;
    return {
       id: 'flash',
-      flash(duration, options = flashOptionDefaults) {
+      flash(this: Char, duration: number, options: Partial<FlashOpt> = {}) {
          const { invert, onDone } = Object.assign({}, flashOptionDefaults, options);
          flashing = true;
          if (invert) this.use(k.shader("invert", ()=>({ "u_time": k.time() })));
@@ -29,7 +39,7 @@ export function flash() {
             if (onDone) onDone.call(this);
          });
       },
-      fixedUpdate() {
+      fixedUpdate(this: Char) {
          if (flashing) {
             const t = k.time() * 30;
             this.color = k.rgb(
@@ -38,7 +48,7 @@ export function flash() {
                k.wave(128, 255, t + 4),
             );
          } else {
-            this.color = k.rgb(255, 255, 255);
+            this.color = k.WHITE;
          }
       }
    };

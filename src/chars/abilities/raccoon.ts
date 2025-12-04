@@ -1,17 +1,28 @@
+import { Char } from '..';
 import k from '../../kaplayCtx';
+import { Comp } from 'kaplay';
+import { isRect } from '../../lib/type-guards';
 
-const optionDefaults = {
+export interface RaccoonOpt {
+   maxFlyTime: number;
+}
+
+const optionDefaults: RaccoonOpt = {
    maxFlyTime: 4,
 };
 
-export function raccoon(options = optionDefaults) {
+export interface RaccoonComp extends Comp {
+   get flyTime(): number;
+}
+
+export function raccoon(options: Partial<RaccoonOpt> = {}) {
    const { maxFlyTime } = Object.assign({}, optionDefaults, options);
    const swipeSound = k.play('spin', { paused: true, loop: false });
    let _flyTime = 0;
    return {
       id: 'raccoon',
       require: [ 'pos', 'freeze' ],
-      add() {
+      add(this: Char) {
          this.onButtonPress('turbo', ()=>{
             // Never act if frozen or not raccoon power
             if (this.isFrozen || this.power!=='raccoon') return;
@@ -23,7 +34,7 @@ export function raccoon(options = optionDefaults) {
             // Never act if frozen or not raccoon power
             if (this.isFrozen || this.power!=='raccoon') return;
             // Raccoon flies if p-run, otherwise floats when "jumping" mid-air
-            if (this.isPRunning && _flyTime<maxFlyTime) {
+            if (this.isPRunning() && _flyTime<maxFlyTime) {
                swipeSound.play(0);
                this.play(`fly-${this.size}`, { loop: false });
                if (this.isGrounded()) _flyTime = 0;
@@ -43,10 +54,11 @@ export function raccoon(options = optionDefaults) {
             }
             k.play('transform');
             this.opacity = 0;
+            const rect = this.area.shape && isRect(this.area.shape) ? this.area.shape : new k.Rect(k.vec2(0,0),0,0);
             this.add([
                k.sprite('items', { anim: 'poof' }),
                k.anchor('center'),
-               k.pos(0, -this.area.shape.height/2),
+               k.pos(0, -rect.height/2),
                k.opacity(1),
                k.lifespan(0.6),
             ]);
@@ -59,7 +71,7 @@ export function raccoon(options = optionDefaults) {
       get flyTime() {
          return _flyTime;
       },
-      fixedUpdate() {
+      fixedUpdate(this: Char) {
          // Don't process movement if frozen
          if (this.isFrozen) return;
          const anim = this.curAnim() ?? '';

@@ -1,21 +1,31 @@
 import k from '../../kaplayCtx';
+import { Comp } from 'kaplay';
+import { Char } from '../index';
 
-const invulnerableOptionDefaults = {
-   onDone: null,
-};
+export interface InvulnerableOpt {
+   onDone?: Function;
+}
 
-export function invulnerable() {
+const invulnerableOptionDefaults: InvulnerableOpt = {};
+
+export interface InvulnerableComp extends Comp {
+   invulnerable(duration: number, options?: InvulnerableOpt): void;
+   get isInvulnerable(): boolean;
+   set isInvulnerable(val: boolean);
+}
+
+export function invulnerable(): InvulnerableComp {
    let invulnerable = false;
    return {
       id: 'invulnerable',
-      requires: [ 'opacity' ],
+      require: [ 'opacity' ],
       get isInvulnerable() {
          return invulnerable;
       },
       set isInvulnerable(val) {
          invulnerable = val;
       },
-      invulnerable(duration, options = invulnerableOptionDefaults) {
+      invulnerable(duration, options: Partial<InvulnerableOpt> = {}) {
          const { onDone } = Object.assign({}, invulnerableOptionDefaults, options);
          invulnerable = true;
          if (!duration) return;
@@ -24,7 +34,7 @@ export function invulnerable() {
             if (onDone) onDone.call(this);
          });
       },
-      fixedUpdate() {
+      fixedUpdate(this: Char) {
          if (invulnerable) {
             this.opacity = k.wave(0.2, 0.8, k.time() * 75);
          } else if (this.opacity!==1 && this.opacity>0) {
