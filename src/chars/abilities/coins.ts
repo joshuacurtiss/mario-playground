@@ -1,4 +1,13 @@
-export function coins(initialCoins=0) {
+import { Comp, GameObj } from 'kaplay';
+
+export interface CoinsComp extends Comp {
+   get coins(): number;
+   set coins(val: number);
+   setCoins(val: number): void;
+   add(): void;
+}
+
+export function coins(initialCoins=0): CoinsComp {
    let _coins = initialCoins;
    return {
       id: 'coins',
@@ -6,6 +15,9 @@ export function coins(initialCoins=0) {
          return _coins;
       },
       set coins(val) {
+         this.setCoins(val);
+      },
+      setCoins(this: GameObj, val: number) {
          _coins = val;
          if (_coins>99) {
             _coins -= 100;
@@ -13,7 +25,7 @@ export function coins(initialCoins=0) {
          }
          this.trigger('coinsChanged', _coins);
       },
-      add() {
+      add(this: GameObj) {
          this.on('collect', (item)=>{
             if (!item.is('coin') && !item.is('coinpop')) return;
             this.coins += 1;
