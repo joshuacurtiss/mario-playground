@@ -10,6 +10,7 @@ gameover
 goomba
 goombared
 goombas
+Headbuttable
 kaplay
 lakitu
 lerp
