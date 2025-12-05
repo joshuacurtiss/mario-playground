@@ -1,10 +1,11 @@
 import k, { scale } from '../kaplayCtx';
 import type { GameObj, SpriteComp, PosComp, AreaComp, BodyComp, ScaleComp, Vec2 } from 'kaplay';
-import { bump } from './abilities/bump';
+import { bump, BumpComp } from './abilities/bump';
 import { items } from './abilities/items';
+import { HeadbuttableComps } from './index';
 
-// TODO: Needs to add the custom comp types (bump, items) once they're authored
-export type Block = GameObj<SpriteComp & PosComp & AreaComp & BodyComp & ScaleComp>;
+// TODO: Needs to add the custom comp types (items) once they're authored
+export type Block = GameObj<HeadbuttableComps & BumpComp>;
 
 export type BlockType = 'empty' | 'wood' | 'question';
 

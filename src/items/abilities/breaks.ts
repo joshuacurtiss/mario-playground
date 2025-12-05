@@ -1,16 +1,18 @@
 import k, { scale } from '../../kaplayCtx';
-import { Comp } from 'kaplay';
-import { Brick } from '../brick';
+import { Comp, GameObj } from 'kaplay';
+import { HeadbuttableComps } from '../index';
 
 export interface BreaksComp extends Comp {
    break: Function;
 }
 
+export type HeadbuttableWithBreaks = GameObj<HeadbuttableComps & BreaksComp>;
+
 export function breaks(): BreaksComp {
    return {
       id: 'breaks',
       require: [ 'sprite', 'pos', 'body' ],
-      add(this: Brick) {
+      add(this: HeadbuttableWithBreaks) {
          this.onHeadbutted(obj=>{
             // Only respond to player headbutts
             if (!obj.is('player')) return;
@@ -21,7 +23,7 @@ export function breaks(): BreaksComp {
             this.break();
          });
       },
-      break(this: Brick) {
+      break(this: HeadbuttableWithBreaks) {
          this.trigger('break');
          const anim = this.curAnim()?.replace('brick', 'brickbreak');
          for ( let i=0 ; i<4 ; i++ ) {

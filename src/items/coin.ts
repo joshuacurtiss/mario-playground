@@ -2,6 +2,8 @@ import k, { scale } from '../kaplayCtx';
 import { makeCoinPop } from './coinpop'
 import { points } from '../shared-abilities/points';
 
+export type CoinType = 'gold' | 'blue';
+
 const bodyOptionDefaults = {
    gravityScale: 0.75,
    drag: 0.75,
