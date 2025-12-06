@@ -31,6 +31,8 @@ export function makeMario(pos, options = optionDefaults) {
       k.body(),
       k.z(1),
       k.offscreen({ distance: 7*scale }),
+      // Run raccoon before general since general handles jumping which interferes with raccoon jumping
+      raccoon(),
       general({ size }),
       coins(),
       fireball(),
@@ -38,7 +40,6 @@ export function makeMario(pos, options = optionDefaults) {
       invulnerable(),
       lives(),
       mushroom(),
-      raccoon(),
       score(),
       star(),
       freeze(),
