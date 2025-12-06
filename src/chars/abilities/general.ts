@@ -274,6 +274,8 @@ export function general(options = optionDefaults) {
             const goDir = c.left ? -1 : 1;
             // If mid-air, you can change direction a little faster (1.75x)
             momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.75);
+            // If they're not moving (maybe there's an obstacle) though, don't build momentum
+            if (Math.abs(momentum)>speeds.inc && !moving) momentum = 0;
             const momentumDir = momentum>0 ? 1 : -1;
             // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
             if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;
