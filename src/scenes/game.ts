@@ -95,7 +95,7 @@ export default function() {
    hud.time = endTime - k.time();
 
    // Player
-   const player = makeMario(k.vec2(k.randi(7, 37)*scale, 0));
+   const player = makeMario(k.vec2(k.randi(7, 30)*scale, 0));
    player.on('die', () => {
       // Fade to black and go home
       k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
@@ -111,15 +111,14 @@ export default function() {
    hud.coins = player.coins;
    // Coins
    for (let i=0; i<38; i++) {
-      makeCoin(k.vec2(100*scale + i*16*scale, ground.pos.y - (i%2===0 ? 6 : 7)*16*scale));
+      makeCoin(k.vec2(100*scale + i*16*scale, ground.pos.y - (i%2===0 ? 7 : 8)*16*scale));
    }
    // Blocks and Bricks
    for (let j=0 ; j<3 ; j++ ) {
       for (let i=0; i<10; i++) {
-         const pos = k.vec2(100*scale+j*224*scale+i*16*scale, ground.pos.y-3*16*scale);
+         const pos = k.vec2(100*scale+j*224*scale+i*16*scale, ground.pos.y-4*16*scale);
          if (i%3===0) {
-            if (i===0 || i===9) makeBlock(pos.sub(0, 16*scale));
-            makeBlock(pos);
+            // makeBlock(pos);
          } else {
             makeBlock(pos, {
                type: 'question',
