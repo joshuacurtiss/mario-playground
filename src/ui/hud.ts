@@ -80,6 +80,12 @@ export function makeHUD() {
          },
       }
    ]);
+   container.add([
+      k.rect(k.width(), 32),
+      k.color(k.BLACK),
+      k.pos(0, 3),
+      k.anchor('botleft'),
+   ]);
    const dashboard = container.add([
       k.sprite('ui-hud-dashboard'),
       k.anchor('botleft'),
