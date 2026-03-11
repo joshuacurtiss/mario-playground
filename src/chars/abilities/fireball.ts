@@ -34,7 +34,7 @@ function bouncingFireball(player: Char): BouncingFireballComp {
       if (!col) return;
       if (col.normal.y < 0) {
          // Bounce off block/ground
-         col.source.vel.y = -700;
+         col.source.vel.y = -600;
       } else if (isFireball(col.source)) {
          // But hitting from side or top causes explosion
          makeExplosion(col.source);
@@ -54,7 +54,7 @@ function bouncingFireball(player: Char): BouncingFireballComp {
       id: 'bouncingFireball',
       require: [ 'pos', 'area' ],
       add(this: Fireball) {
-         this.vel = k.vec2(700*dir, 200);
+         this.vel = k.vec2(600*dir, 200);
          this.onCollide('enemy', handleEnemyCollision);
          this.onCollide('block-or-brick', handleBlockCollision);
          this.onCollide('ground', handleBlockCollision);

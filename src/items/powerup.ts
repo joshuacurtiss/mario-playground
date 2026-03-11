@@ -110,12 +110,12 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
             this.onFixedUpdate(()=>{
                if (k.time() < leafStartFalling) return;
                this.gravityScale = 1;
-               this.vel.x = 45 * scale * Math.sin(k.time() * 3);
+               this.vel.x = 60 * scale * Math.sin(k.time() * 4);
                this.flipX = this.vel.x > 0;
-               this.applyImpulse(k.vec2(0, Math.abs(this.vel.x) * -0.4));
+               this.applyImpulse(k.vec2(0, Math.abs(this.vel.x) * -0.45));
             });
          } else if (_type === 'star') {
-            const starVertSpeed = -175 * scale;
+            const starVertSpeed = -210 * scale;
             this.gravityScale = 0.5;
             this.vel = k.vec2(speed*this.dir, starVertSpeed);
             this.onGround(()=>this.vel.y = starVertSpeed);
@@ -123,7 +123,7 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
       },
       fixedUpdate(this: Powerup) {
          if (this.is('revealing')) {
-            this.moveBy(0, -2.5 * (_type === 'leaf' ? 2*this.pos.y/revealHeight : 1));
+            this.moveBy(0, -0.625 * scale * (_type === 'leaf' ? 3*this.pos.y/revealHeight : 1));
             // Stop ignoring player collisions once 0.25 revealed
             if (this.pos.y <= revealHeight + (this.height * scale * 0.75)) {
                this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='player');

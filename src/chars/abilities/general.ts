@@ -58,8 +58,8 @@ const optionDefaults: GeneralCompOpt = {
       inc: 7
    },
    jumpForces: {
-      sm: 1300,
-      lg: 1350
+      sm: 1130,
+      lg: 1190
    },
    areas: {
       duck: new k.Rect(k.vec2(0), 10, 16),
@@ -360,7 +360,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
             // If mid-air, you can change direction a little faster (1.75x)
             momentum += speeds.inc * goDir * (this.isGrounded() ? 1 : 1.75);
             // If they're not moving (maybe there's an obstacle) though, don't build momentum
-            if (Math.abs(momentum)>speeds.inc && !moving) momentum = 0;
+            if (Math.abs(momentum)>speeds.inc * 2 && !moving) momentum = 0;
             const momentumDir = momentum>0 ? 1 : -1;
             // TODO: If you let go of turbo mid-jump, this stops them too fast mid-air.
             if (Math.abs(momentum)>maxSpeed) momentum = maxSpeed * momentumDir;

@@ -17,7 +17,7 @@ export interface CoinPopOpt {
 
 const optionDefaults: CoinPopOpt = {
    type: 'gold',
-   revealForce: k.vec2(0, -1400),
+   revealForce: k.vec2(0, -1200),
    reveal: false,
    points: 100,
 };
@@ -56,7 +56,7 @@ export function coinPop(options: Partial<CoinPopCompOpt> = {}): CoinPopComp {
          this.z = 20;
          if (revealForce) this.vel = revealForce;
          this.isStatic = false;
-         k.wait(0.54, ()=>{
+         k.wait(0.5, ()=>{
             const exp = k.add([
                k.sprite('items', { anim: `coinexp-${type}` }),
                k.pos(this.pos),
@@ -79,7 +79,7 @@ export function makeCoinPop(pos: Vec2, options: Partial<CoinPopOpt> = {}): CoinP
    return k.add([
       k.sprite('items', { anim: `coinpop-${opts.type}` }),
       k.pos(pos),
-      k.body({ isStatic: true, gravityScale: 1.5 }),
+      k.body({ isStatic: true, gravityScale: 1.4 }),
       k.scale(scale),
       k.z(-1),
       points(opts.points),

@@ -27,17 +27,22 @@ export default function() {
    // Ground
    for( let i=0 ; i<landSpriteCount ; i++ ) {
       k.add([
-         k.sprite('items', { anim: 'grass' }),
+         k.sprite('items', { frame: 2 }),
+         k.scale(scale),
+         k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*4),
+         'ground',
+      ]);
+      k.add([
+         k.sprite('items', { frame: 8 }),
          k.scale(scale),
          k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*3),
-         'ground',
       ]);
    }
    const ground = k.add([
       k.rect(landSpriteCount*spriteSize*scale, spriteSize/2*scale),
       k.color(0, 0, 0),
       k.z(-101),
-      k.pos(0, k.height()-spriteSize*scale*3+4),
+      k.pos(0, k.height()-spriteSize*scale*4+4),
       k.area(),
       k.body({ isStatic: true }),
       'ground',
@@ -65,7 +70,7 @@ export default function() {
          k.sprite('bg-grassland'),
          k.scale(scale),
          k.anchor('botleft'),
-         k.pos(i*512*scale, ground.pos.y),
+         k.pos(i*512*scale, ground.pos.y+spriteSize*scale*2+3*scale),
       ]);
    }
    // UI

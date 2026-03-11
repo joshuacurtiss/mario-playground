@@ -50,7 +50,7 @@ function goomba(): GoombaComp {
          if (player) player.trigger('collect', this);
          this.isFrozen = true;
          this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
-         this.vel = k.vec2(0, -175*scale);
+         this.vel = k.vec2(0, -200*scale);
          this.flipY = true;
          this.stop();
          k.play('hit');
@@ -93,7 +93,7 @@ export function makeGoomba(pos: Vec2, options = optionDefaults): Goomba {
       }),
       k.anchor('bot'),
       k.pos(pos),
-      k.body(),
+      k.body({ maxVelocity: 1200 }),
       k.offscreen({ distance: 10000, destroy: true }),
       collect(),
       move(opts.move),

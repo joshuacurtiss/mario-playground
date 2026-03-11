@@ -1,4 +1,4 @@
-import k from '../../kaplayCtx';
+import k, { scale } from '../../kaplayCtx';
 import { Comp, GameObj, Vec2 } from 'kaplay';
 import { HeadbuttableComps } from '../index';
 import { Char, isChar } from '../../chars';
@@ -11,7 +11,7 @@ export interface BumpComp extends Comp {
 
 export type HeadbuttableWithBump = GameObj<HeadbuttableComps & BumpComp>;
 
-export function bump(masterSpeed = k.vec2(0, -15)): BumpComp {
+export function bump(masterSpeed = k.vec2(0, -3.75*scale)): BumpComp {
    let bumping = false;
    let bumpMove: Vec2; // The current movement vector during bump, changing per frame
    let thisBumpSpeed: Vec2; // The speed of the current bump
@@ -57,7 +57,7 @@ export function bump(masterSpeed = k.vec2(0, -15)): BumpComp {
          if (bumping) {
             this.moveBy(bumpMove);
             (['x', 'y'] as const).forEach(axis=>{
-               if (thisBumpSpeed[axis]) bumpMove[axis] += thisBumpSpeed[axis] > 0 ? -3 : 3;
+               if (thisBumpSpeed[axis]) bumpMove[axis] += (thisBumpSpeed[axis] > 0 ? -1 : 1) * 0.75 * scale;
             });
             // Check if we are back to original position. Consider the bump done.
             if (this.pos.dist(origPos) < 1) {

@@ -78,7 +78,7 @@ export function raccoon(options: Partial<RaccoonOpt> = {}) {
          // If wagging tail, slow down vertical velocity
          if (anim.startsWith('wag')) {
             if (this.isGrounded()) this.play(`walk-${this.size}`);
-            else if (this.vel.y>0) this.vel.y *= 0.6;
+            else if (this.vel.y>0) this.vel.y *= 0.44;
          }
          // If flying, track fly time
          if (anim.startsWith('fly') && !this.isGrounded()) {

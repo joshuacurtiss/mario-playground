@@ -37,7 +37,7 @@ export function makeMario(pos: Vec2, options: Partial<MarioOpt> = {}): Char {
       k.color(k.WHITE),
       k.opacity(1),
       k.pos(pos),
-      k.body(),
+      k.body({ maxVelocity: 1400 }),
       k.z(1),
       k.offscreen({ distance: 7*scale }),
       // Run raccoon before general since general handles jumping which interferes with raccoon jumping
