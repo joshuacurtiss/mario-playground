@@ -27,13 +27,13 @@ export default function() {
    // Ground
    for( let i=0 ; i<landSpriteCount ; i++ ) {
       k.add([
-         k.sprite('items', { frame: 2 }),
+         k.sprite('terrain-grass', { frame: 1 }),
          k.scale(scale),
          k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*4),
          'ground',
       ]);
       k.add([
-         k.sprite('items', { frame: 8 }),
+         k.sprite('terrain-grass', { frame: 7 }),
          k.scale(scale),
          k.pos(i*scale*spriteSize, k.height()-spriteSize*scale*3),
       ]);

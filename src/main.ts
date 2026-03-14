@@ -3,7 +3,13 @@ import game from "./scenes/game";
 import home from "./scenes/home";
 
 // Sprite Items
-[ 'items', 'enemies', 'hud-digits', 'hud-items' ].forEach(name => {
+[
+   'items',
+   'enemies',
+   'hud-digits',
+   'hud-items',
+   'terrain-grass',
+].forEach(name => {
    k.loadAseprite(name, `assets/sprites/${name}.png`, `assets/sprites/${name}.json`);
 });
 
