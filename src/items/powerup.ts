@@ -97,12 +97,12 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
          this.trigger('revealDone');
          this.gravityScale = 1;
          // Allow collisions with blocks again, because now it revealed
-         this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='block-or-brick');
+         this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='immovable');
          // Specific powerup behaviors
          if (_type === 'mushroom' || _type === '1up') {
             this.vel = k.vec2(speed*this.dir, 0);
          } else if (_type === 'leaf') {
-            this.collisionIgnore.push('block-or-brick');
+            this.collisionIgnore.push('immovable');
             this.collisionIgnore.push('ground');
             this.gravityScale = 0;
             this.z = 5;
@@ -146,7 +146,7 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
          if (_type === '1up') this.points = 0;
          // Change direction when bumping into things
          const handleCollide = (obj: GameObj, col?: Collision)=>{
-            if (!obj.is('block-or-brick')) {
+            if (!obj.is('immovable')) {
                col?.preventResolution();
                return;
             }
@@ -154,7 +154,7 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
                this.dir = this.dir<0 ? 1 : -1;
             }
          };
-         this.onCollide('block-or-brick', handleCollide);
+         this.onCollide('immovable', handleCollide);
          this.onCollideUpdate(handleCollide);
          // Leaf has different collision area
          if (_type === 'leaf') {
@@ -172,7 +172,7 @@ export function makePowerup(pos: Vec2, options: Partial<PowerupOpt> = {}): Power
       k.sprite('items', { anim: opts.type, animSpeed: opts.type==='star' ? 2 : 1 }),
       k.pos(pos),
       k.body({ isStatic: true, maxVelocity: opts.type === 'leaf' ? 175 : undefined }),
-      k.area({ collisionIgnore: [ 'powerup', 'coin', 'coinpop', 'enemy', 'block-or-brick', 'player' ] }),
+      k.area({ collisionIgnore: [ 'powerup', 'coin', 'coinpop', 'enemy', 'immovable', 'player' ] }),
       k.scale(scale),
       k.z(-1),
       points(opts.points),

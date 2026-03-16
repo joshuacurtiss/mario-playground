@@ -98,7 +98,7 @@ function coinBody(options: Partial<CoinWithBodyCompOpt> = {}): CoinWithBodyComp 
             if (col?.normal.x) this.vel = this.vel.scale(-0.85, 1);
             if (col?.normal.y) this.vel = this.vel.scale(1, col.normal.y<0 ? -0.75 : 1);
          };
-         ['ground', 'block-or-brick'].forEach(tag=>this.onCollide(tag, bounce));
+         ['ground', 'immovable'].forEach(tag=>this.onCollide(tag, bounce));
          // Initial velocity
          if (velocity) this.vel = velocity;
       }

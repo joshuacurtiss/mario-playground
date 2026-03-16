@@ -56,7 +56,7 @@ function bouncingFireball(player: Char): BouncingFireballComp {
       add(this: Fireball) {
          this.vel = k.vec2(600*dir, 200);
          this.onCollide('enemy', handleEnemyCollision);
-         this.onCollide('block-or-brick', handleBlockCollision);
+         this.onCollide('immovable', handleBlockCollision);
          this.onCollide('ground', handleBlockCollision);
       },
       destroy(this: Fireball) {

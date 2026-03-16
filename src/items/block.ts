@@ -29,6 +29,6 @@ export function makeBlock(pos: Vec2, options: BlockOpt = {}): Block {
       items(itemsArray ?? []),
       'block',
       `block-${type}`,
-      'block-or-brick',
+      'immovable',
    ]);
 }

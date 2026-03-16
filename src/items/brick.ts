@@ -30,6 +30,6 @@ export function makeBrick(pos: Vec2, options: BrickOpt = {}): Brick {
       items(itemsArray ?? []),
       'brick',
       `brick-${type}`,
-      'block-or-brick',
+      'immovable',
    ]);
 }

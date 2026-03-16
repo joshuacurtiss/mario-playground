@@ -45,7 +45,7 @@ export function move(options: Partial<MoveCompOpt> = {}): MoveComp {
             if (this.isFrozen || obj.is('player')) return;
             if ((col?.isLeft() && this.dir<0) || (col?.isRight() && this.dir>0)) {
                // If a block triggers a collision by just a few pixels vertically, ignore it.
-               if (obj.is('block-or-brick') && Math.abs(obj.pos.y-this.pos.y) < 10) return;
+               if ((obj.is('block') || obj.is('brick')) && Math.abs(obj.pos.y-this.pos.y) < 10) return;
                this.dir *= -1;
             }
          });
