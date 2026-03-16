@@ -7,6 +7,7 @@ import { makeGoomba } from '../enemies/goomba';
 import { makeCoinPop } from '../items/coinpop';
 import { makeBlock } from '../items/block';
 import { makeBrick } from '../items/brick';
+import { makePipe } from '../items/pipe';
 import { makePowerup } from '../items/powerup';
 import { makeHUD } from '../ui/hud';
 
@@ -113,6 +114,8 @@ export default function() {
    for (let i=0; i<38; i++) {
       makeCoin(k.vec2(100*scale + i*16*scale, ground.pos.y - (i%2===0 ? 7 : 8)*16*scale));
    }
+   makePipe(k.vec2(ground.pos.x + 64*scale, ground.pos.y), { height: 3 });
+   makePipe(k.vec2(ground.width - 32*scale, ground.pos.y), { height: 3 });
    // Blocks and Bricks
    for (let j=0 ; j<3 ; j++ ) {
       for (let i=0; i<10; i++) {
