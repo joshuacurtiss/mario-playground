@@ -9,6 +9,7 @@ import home from "./scenes/home";
    'hud-digits',
    'hud-items',
    'terrain-grass',
+   'terrain-pipe-green',
 ].forEach(name => {
    k.loadAseprite(name, `assets/sprites/${name}.png`, `assets/sprites/${name}.json`);
 });
