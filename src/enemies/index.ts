@@ -1,12 +1,12 @@
-import { AnchorComp, AreaComp, BodyComp, Comp, GameObj, OffScreenComp, PosComp, ScaleComp, SpriteComp, Vec2 } from "kaplay";
+import { AnchorComp, AreaComp, BodyComp, Comp, GameObj, OffScreenComp, PosComp, ScaleComp, SpriteComp, Vec2, ZComp } from "kaplay";
 import { CollectComp } from "./abilities/collect";
 import { FreezeComp } from '../shared-abilities/freeze';
 import { MoveComp } from './abilities/move';
 import { PatrolComp } from "./abilities/patrol";
 import { PointsComp } from '../shared-abilities/points';
-import { GOOMBA_CHARS, makeGoomba } from "./goomba";
+import { GOOMBA_ENEMY_TAG, makeGoomba } from "./goomba";
 
-export const ENEMY_TYPES = [ ...GOOMBA_CHARS ] as const;
+export const ENEMY_TYPES = [ GOOMBA_ENEMY_TAG ] as const;
 export type EnemyType = typeof ENEMY_TYPES[number];
 
 export function isEnemyType(value: unknown): value is EnemyType {
@@ -28,6 +28,7 @@ export type EnemyComps =
    OffScreenComp &
    ScaleComp &
    SpriteComp &
+   ZComp &
    // Custom
    CollectComp &
    EnemyComp &
@@ -44,7 +45,7 @@ export function isEnemy(obj: GameObj): obj is Enemy {
 }
 
 export const factories = {
-   "goomba": makeGoomba,
+   [GOOMBA_ENEMY_TAG]: makeGoomba,
 }
 
 export { makeGoomba, isGoomba } from './goomba';

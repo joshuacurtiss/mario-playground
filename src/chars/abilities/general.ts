@@ -311,6 +311,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          this.onCollide('coin', this.handleCollideCollectible);
          this.onCollide('powerup', this.handleCollideCollectible);
          this.on('collect', this.handleCollectItem);
+         this.onExitScreen(() => this.die());
       },
       fixedUpdate(this: Char) {
          // Don't process movement if frozen
