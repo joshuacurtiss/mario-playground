@@ -8,8 +8,20 @@ import home from "./scenes/home";
    'enemies',
    'hud-digits',
    'hud-items',
+   'terrain-bush',
+   'terrain-cave',
+   'terrain-cloud',
+   'terrain-cloudface',
+   'terrain-floating-plank',
+   'terrain-goal',
    'terrain-grass',
    'terrain-pipe-green',
+   'terrain-plank',
+   'terrain-platform-blue',
+   'terrain-platform-green',
+   'terrain-platform-orange',
+   'terrain-platform-white',
+   'terrain-sand',
 ].forEach(name => {
    k.loadAseprite(name, `assets/sprites/${name}.png`, `assets/sprites/${name}.json`);
 });
