@@ -53,9 +53,10 @@ for aseprite in "$sprite_resource_dir"/*.aseprite; do
       # Run Aseprite export
       "$ASEPRITE" -b --layer "$layer" --list-tags "$aseprite" \
          --sheet "$sheet_path" \
+         --sheet-width 160 \
          --data "$data_path" \
          --filename-format "$filename_format" \
-         --sheet-pack --format json-array
+         --format json-array
       # Minify the json file
       jq -c . "$data_path" > "$data_path.tmp" && mv "$data_path.tmp" "$data_path"
    done
