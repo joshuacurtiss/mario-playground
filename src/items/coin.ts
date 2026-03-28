@@ -8,11 +8,16 @@ const collisionIgnore = [ 'coin', 'enemy' ];
 const makeCoinAreaShape = () => new k.Rect(k.vec2(3, 0), 10, 16);
 
 // "Coin" and "CoinWithBody" types and their comp lists
-export type CoinType = 'gold' | 'blue';
+export const COIN_TYPES = ['gold', 'blue'] as const;
+export type CoinType = typeof COIN_TYPES[number];
 export type CoinComps = SpriteComp & PosComp & AreaComp & ScaleComp & OpacityComp & OffScreenComp & PointsComp & CoinComp;
 export type CoinWithBodyComps = CoinComps & BodyComp & CoinWithBodyComp;
 export type Coin = GameObj<CoinComps>;
 export type CoinWithBody = GameObj<CoinWithBodyComps>;
+
+export function isCoinType(value: unknown): value is CoinType {
+   return typeof value === 'string' && COIN_TYPES.includes(value as any);
+}
 
 /*
  * "Coin" and "CoinWithBody" factory options and defaults

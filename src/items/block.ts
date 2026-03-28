@@ -5,8 +5,12 @@ import { items, ItemComp } from './abilities/items';
 import { HeadbuttableItem, HeadbuttableComps } from './index';
 
 export type Block = GameObj<HeadbuttableComps & BumpComp & ItemComp>;
+export const BLOCK_TYPES = ['empty', 'wood', 'question'] as const;
+export type BlockType = typeof BLOCK_TYPES[number];
 
-export type BlockType = 'empty' | 'wood' | 'question';
+export function isBlockType(value: unknown): value is BlockType {
+   return typeof value === 'string' && BLOCK_TYPES.includes(value as any);
+}
 
 export interface BlockOpt {
    type?: BlockType;

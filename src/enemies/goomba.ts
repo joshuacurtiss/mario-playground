@@ -7,10 +7,11 @@ import { patrol, PatrolCompOpt } from "./abilities/patrol";
 import { points } from '../shared-abilities/points';
 import { freeze } from '../shared-abilities/freeze';
 
-export type GoombaChar = 'goomba' | 'goombared';
+export const GOOMBA_CHARS = ['goomba', 'goombared'] as const;
+export type GoombaChar = typeof GOOMBA_CHARS[number];
 
 export function isGoombaChar(val: string): val is GoombaChar {
-   return ['goomba', 'goombared'].includes(val);
+   return GOOMBA_CHARS.includes(val as any);
 }
 
 export type Goomba = GameObj<EnemyComps & GoombaComp>;

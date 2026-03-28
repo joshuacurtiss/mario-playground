@@ -3,10 +3,15 @@ import type { AreaComp, GameObj, SpriteComp, PosComp, BodyComp, ScaleComp, Vec2,
 import { points, PointsComp } from '../shared-abilities/points';
 import { makeIndicator } from '../ui/indicator';
 
-export type PowerupType = 'mushroom' | 'flower' | 'leaf' | 'star' | '1up';
+export const POWERUP_TYPES = ['mushroom', 'flower', 'leaf', 'star', '1up'] as const;
+export type PowerupType = typeof POWERUP_TYPES[number];
 export type Dir = -1 | 1;
 
 export type Powerup = GameObj<SpriteComp & PosComp & BodyComp & AreaComp & ScaleComp & ZComp & PointsComp & PowerupComp>;
+
+export function isPowerupType(value: unknown): value is PowerupType {
+   return typeof value === 'string' && POWERUP_TYPES.includes(value as any);
+}
 
 export interface PowerupOpt {
    type: PowerupType;
@@ -185,4 +190,24 @@ export function makePowerup(pos: Vec2, options: Partial<PowerupOpt> = {}): Power
       `powerup-${opts.type}`,
       opts.type,
    ]);
+}
+
+export function makeMushroom(pos: Vec2, options: Omit<PowerupOpt, 'type'> = {}): Powerup {
+   return makePowerup(pos, { ...options, type: 'mushroom' });
+}
+
+export function makeFlower(pos: Vec2, options: Omit<PowerupOpt, 'type'> = {}): Powerup {
+   return makePowerup(pos, { ...options, type: 'flower' });
+}
+
+export function makeLeaf(pos: Vec2, options: Omit<PowerupOpt, 'type'> = {}): Powerup {
+   return makePowerup(pos, { ...options, type: 'leaf' });
+}
+
+export function makeStar(pos: Vec2, options: Omit<PowerupOpt, 'type'> = {}): Powerup {
+   return makePowerup(pos, { ...options, type: 'star' });
+}
+
+export function make1Up(pos: Vec2, options: Omit<PowerupOpt, 'type'> = {}): Powerup {
+   return makePowerup(pos, { ...options, type: '1up' });
 }

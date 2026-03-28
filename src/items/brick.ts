@@ -6,7 +6,12 @@ import { items, ItemComp } from './abilities/items';
 import { HeadbuttableItem, HeadbuttableComps } from './index';
 
 export type Brick = GameObj<HeadbuttableComps & BreaksComp & BumpComp & ItemComp>;
-export type BrickType = 'normal' | 'ice';
+export const BRICK_TYPES = ['normal', 'ice'] as const;
+export type BrickType = typeof BRICK_TYPES[number];
+
+export function isBrickType(value: unknown): value is BrickType {
+   return typeof value === 'string' && BRICK_TYPES.includes(value as any);
+}
 
 export interface BrickOpt {
    type?: BrickType;
