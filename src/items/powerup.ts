@@ -96,6 +96,7 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
          this.untag('revealing');
          this.trigger('revealDone');
          this.gravityScale = 1;
+         this.z = 5;
          // Allow collisions with blocks again, because now it revealed
          this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='immovable');
          // Specific powerup behaviors
@@ -105,7 +106,6 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
             this.collisionIgnore.push('immovable');
             this.collisionIgnore.push('ground');
             this.gravityScale = 0;
-            this.z = 5;
             const leafStartFalling = k.time() + 0.05;
             this.onFixedUpdate(()=>{
                if (k.time() < leafStartFalling) return;
