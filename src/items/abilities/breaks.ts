@@ -2,6 +2,7 @@ import k, { scale } from '../../kaplayCtx';
 import { Comp, GameObj } from 'kaplay';
 import { HeadbuttableComps } from '../index';
 import { isChar } from '../../chars';
+import { isHeadbuttableWithItems } from './items';
 
 export interface BreaksComp extends Comp {
    break: Function;
@@ -21,6 +22,8 @@ export function breaks(): BreaksComp {
             // If it is an "empty" sprite, do not bump. We handle it this way because some things like
             // a note block or a brick can be bumped when empty. But a `block-empty` never will.
             if (this.curAnim()?.endsWith('empty')) return;
+            // If this has items, stop before breaking.
+            if (isHeadbuttableWithItems(this) && this.itemsEmpty === false) return false;
             this.break();
          });
       },

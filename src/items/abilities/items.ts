@@ -25,6 +25,10 @@ export interface ItemComp extends Comp {
 
 type HeadbuttableWithItems = GameObj<HeadbuttableComps & ItemComp>;
 
+export function isHeadbuttableWithItems(obj?: GameObj): obj is HeadbuttableWithItems {
+   return !!obj && obj.has('items');
+}
+
 export function items(items: HeadbuttableItem | HeadbuttableItem[], options: Partial<ItemsOpt> = {}): ItemComp {
    const itemArray: HeadbuttableItem[] = [];
    const { emptyAnim } = Object.assign({}, optionDefaults, options);
