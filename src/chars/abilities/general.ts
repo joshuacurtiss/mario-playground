@@ -1,5 +1,5 @@
 import k, { scale } from '../../kaplayCtx';
-import { Collision, Comp, GameObj, Rect } from 'kaplay';
+import { Collision, Comp, GameObj, Rect, Vec2 } from 'kaplay';
 import { Char } from '../index';
 import { Enemy, isEnemy } from '../../enemies';
 import { isRect } from '../../lib/type-guards';
@@ -286,7 +286,29 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          this.score += item.points;
          item.collect();
       },
-      handlePhysics(col) {
+      handlePhysics(this: Char, col) {
+         // Raccoon tail swipe should break bricks when contacting from the side.
+         if (col.target.is(['brick', 'block'], 'or') && this.curAnim()?.startsWith('swipe') && Math.abs(col.normal.x) > 0) {
+            const brick = col.target as GameObj & {
+               has: (id: string) => boolean;
+               break?: () => void;
+               bump?: (speed?: Vec2, dir?: 1 | -1, bumper?: Char) => void;
+               itemsEmpty?: boolean;
+               width?: number;
+            };
+            const hasItemsRemaining = brick.has('items') && brick.itemsEmpty === false;
+            if (hasItemsRemaining && brick.has('bump') && typeof brick.bump === 'function') {
+               col.preventResolution();
+               const dir = this.pos.x < brick.pos.x + (brick.width ?? 0) * brick.scale.x / 2 ? 1 : -1;
+               brick.bump(undefined, dir, this);
+               return;
+            }
+            if (brick.is('brick') && brick.has('breaks') && typeof brick.break === 'function' && this.size === 'lg' && !hasItemsRemaining) {
+               col.preventResolution();
+               brick.break();
+               return;
+            }
+         }
          // There's only special logic for touching enemies
          if (isEnemy(col.target)) {
             col.preventResolution();
