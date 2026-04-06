@@ -62,10 +62,10 @@ const optionDefaults: GeneralCompOpt = {
       lg: 1190
    },
    areas: {
-      duck: new k.Rect(k.vec2(0), 10, 16),
+      duck: new k.Rect(k.vec2(0), 8, 15),
       swipe: new k.Rect(k.vec2(0), 24, 27),
-      sm: new k.Rect(k.vec2(0), 10, 15),
-      lg: new k.Rect(k.vec2(0), 13, 27),
+      sm: new k.Rect(k.vec2(0), 8, 15),
+      lg: new k.Rect(k.vec2(0), 10, 27),
    },
    prunThreshold: 1.2,
    size: 'sm',
