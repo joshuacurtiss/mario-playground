@@ -1,6 +1,7 @@
 import { AnchorComp, AreaComp, BodyComp, Comp, GameObj, OffScreenComp, PosComp, ScaleComp, SpriteComp, Vec2, ZComp } from "kaplay";
 import { CollectComp } from "./abilities/collect";
 import { FreezeComp } from '../shared-abilities/freeze';
+import { AvoidCliffComp } from './abilities/avoid-cliff';
 import { MoveComp } from './abilities/move';
 import { PatrolComp } from "./abilities/patrol";
 import { PointsComp } from '../shared-abilities/points';
@@ -30,6 +31,7 @@ export type EnemyComps =
    SpriteComp &
    ZComp &
    // Custom
+   AvoidCliffComp &
    CollectComp &
    EnemyComp &
    FreezeComp &

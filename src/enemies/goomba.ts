@@ -1,6 +1,7 @@
 import k, { scale } from "../kaplayCtx";
-import { Comp, GameObj, Vec2 } from 'kaplay';
+import { GameObj, Vec2 } from 'kaplay';
 import { Enemy, EnemyComp, EnemyComps, isEnemy } from './index';
+import { avoidCliff, AvoidCliffCompOpt } from './abilities/avoid-cliff';
 import { collect } from "./abilities/collect";
 import { move, MoveCompOpt } from "./abilities/move";
 import { patrol, PatrolCompOpt } from "./abilities/patrol";
@@ -79,6 +80,7 @@ export interface GoombaOpt {
    type: GoombaType;
    move?: MoveCompOpt;
    patrol?: PatrolCompOpt;
+   avoidCliff?: Partial<AvoidCliffCompOpt>;
    points?: number;
 }
 
@@ -110,6 +112,7 @@ export function makeGoomba(pos: Vec2, options = optionDefaults): Goomba {
       points(opts.points),
       freeze(),
       goomba(),
+      avoidCliff(opts.avoidCliff),
       'enemy',
       GOOMBA_ENEMY_TAG,
    ]);
