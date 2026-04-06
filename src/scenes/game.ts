@@ -179,6 +179,10 @@ export default function() {
       } else if (keyLog.endsWith('hurt')) {
          player.hurt();
          k.debug.log('If you say so... OW!');
+      } else if (keyLog.endsWith('raccoon')) {
+         player.size = 'lg';
+         player.power = 'raccoon';
+         k.debug.log('Raccoon power, eh? Don\'t forget to flap your arms when you jump!');
       } else if (keyLog.endsWith('grow')) {
          player.grow();
          k.debug.log('It\'s great to be BIG!');
