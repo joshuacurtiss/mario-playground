@@ -33,17 +33,22 @@ export function raccoon(options: Partial<RaccoonOpt> = {}) {
          this.onButtonPress('jump', ()=>{
             // Never act if frozen or not raccoon power
             if (this.isFrozen || this.power!=='raccoon') return;
+            // First jump from ground should be a normal jump. Raccoon behavior
+            // (wag/fly) only starts on a follow-up jump press while airborne.
+            if (this.isGrounded()) {
+               _flyTime = 0;
+               return;
+            }
             // Raccoon flies if p-run, otherwise floats when "jumping" mid-air
             if (this.isPRunning() && _flyTime<maxFlyTime) {
                swipeSound.play(0);
                this.play(`fly-${this.size}`, { loop: false });
-               if (this.isGrounded()) _flyTime = 0;
-               else this.vel.y = -750;
+               this.vel.y = -750;
             } else {
                this.runTime = 0;
                _flyTime = 0;
                this.play(`wag-${this.size}`, { loop: false, speed: 12 });
-               if (!this.isGrounded()) swipeSound.play(0);
+               swipeSound.play(0);
             }
          });
          this.on('collect', (item)=>{
