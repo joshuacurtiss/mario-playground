@@ -123,7 +123,11 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
       },
       fixedUpdate(this: Powerup) {
          if (this.is('revealing')) {
-            this.moveBy(0, -0.625 * scale * (_type === 'leaf' ? 3*this.pos.y/revealHeight : 1));
+            this.moveBy(0, -0.625 * scale * (_type === 'leaf'
+               ? (revealHeight < 0
+                  ? Math.max(1, 3 * Math.abs(this.pos.y / (revealHeight || -1)))
+                  : 3 * this.pos.y / (revealHeight || 1))
+               : 1));
             // Stop ignoring player collisions once 0.25 revealed
             if (this.pos.y <= revealHeight + (this.height * scale * 0.75)) {
                this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='player');
