@@ -101,7 +101,7 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
          this.untag('revealing');
          this.trigger('revealDone');
          this.gravityScale = 1;
-         this.z = 5;
+         this.z = 1;
          // Allow collisions with blocks again, because now it revealed
          this.collisionIgnore = this.collisionIgnore.filter(ci=>ci!=='immovable');
          // Specific powerup behaviors
@@ -153,6 +153,11 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
          revealHeight = this.pos.y - 16 * scale * (_type === 'leaf' ? 3.25 : 1);
          // 1up doesn't have points
          if (_type === '1up') this.points = 0;
+         // Destroy when hitting a 'die' collider
+         this.onCollide('die', (obj, col)=>{
+            col?.preventResolution();
+            this.destroy();
+         });
          // Change direction when bumping into things
          const handleCollide = (obj: GameObj, col?: Collision)=>{
             if (!obj.is('immovable')) {
