@@ -1,7 +1,9 @@
-import { GameObj, Vec2 } from 'kaplay';
+import { Collision, GameObj, Vec2 } from 'kaplay';
 import k from '../kaplayCtx';
+import { isChar } from '../chars';
 import { factories as itemFactories, ItemFactory } from '../items';
-import { factories as enemyFactories } from '../enemies';
+import { factories as enemyFactories, isEnemy } from '../enemies';
+import { isFireball } from '../chars/abilities/fireball';
 import enemySpriteData from '../../public/assets/sprites/enemies.json';
 import itemSpriteData from '../../public/assets/sprites/items.json';
 
@@ -280,14 +282,32 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
                } else {
                   for (const object of layer.objects) {
                      // Treat any remaining object layers as static collision layers
-                     k.add([
+                     const collider = k.add([
                         k.area({ shape: new k.Rect(k.vec2(0), object.width, object.height) }),
                         k.scale(this.scale),
                         k.pos(this.mapOriginPos.add(object.x, object.y).scale(this.scale)),
                         k.body({ isStatic: true }),
-                        'immovable',
-                        object.type,
+                        object.type.length ? object.type : 'immovable', // Name the type, with default 'immovable'
                      ]);
+                     if (object.type === 'walkthru') {
+                        const platformPts = collider.worldArea().pts;
+                        const platformTop = Math.min(...platformPts.map((p: Vec2)=>p.y));
+                        collider.onBeforePhysicsResolve((col: Collision) => {
+                           // For one-way platforms, only resolve when target approached from above while falling.
+                           const target = isChar(col.target) || isEnemy(col.target) || isFireball(col.target) ? col.target : null;
+                           if (!target) return;
+                           const vy = target.vel?.y ?? 0;
+                           if (vy<0 || !col.isTop()) {
+                              col.preventResolution();
+                              return;
+                           }
+                           const targetPts = target.worldArea?.().pts ?? [];
+                           const targetBottom = targetPts.length ? Math.max(...targetPts.map((p: Vec2)=>p.y)) : target.pos.y;
+                           const previousBottom = targetBottom - vy * k.dt();
+                           const cameFromAbove = previousBottom <= platformTop + this.scale;
+                           if (!cameFromAbove) col.preventResolution();
+                        });
+                     }
                   }
                }
             }

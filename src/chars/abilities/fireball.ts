@@ -14,7 +14,7 @@ interface BouncingFireballComp extends Comp {
 
 type Fireball = GameObj<SpriteComp & ScaleComp & AreaComp & PosComp & AnchorComp & BodyComp & OffScreenComp & BouncingFireballComp>;
 
-function isFireball(obj?: GameObj): obj is Fireball {
+export function isFireball(obj?: GameObj): obj is Fireball {
    return !!obj && obj.has(['bouncingFireball', 'sprite', 'area', 'pos', 'body']);
 }
 
@@ -35,6 +35,9 @@ function bouncingFireball(player: Char): BouncingFireballComp {
       if (col.normal.y < 0) {
          // Bounce off block/ground
          col.source.vel.y = -600;
+      } else if (col.target.is('walkthru')) {
+         // Pass thru walkthru platforms with no explosion, unless from top
+         return;
       } else if (isFireball(col.source)) {
          // But hitting from side or top causes explosion
          makeExplosion(col.source);
@@ -57,6 +60,7 @@ function bouncingFireball(player: Char): BouncingFireballComp {
          this.vel = k.vec2(600*dir, 200);
          this.onCollide('enemy', handleEnemyCollision);
          this.onCollide('immovable', handleBlockCollision);
+         this.onCollide('walkthru', handleBlockCollision);
          this.onCollide('ground', handleBlockCollision);
       },
       destroy(this: Fireball) {
