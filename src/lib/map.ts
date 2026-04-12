@@ -295,10 +295,10 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
          this.images = images;
       },
       render() {
-         k.onDraw(() => {
-            for (const tile of this.tilesData) {
-               k.drawSprite(tile);
-            }
+         // Draw tiles at z -50 to ensure they are behind all items.
+         const tileLayer = k.add([ k.z(-50) ]);
+         tileLayer.onDraw(() => {
+            this.tilesData.forEach(tile => k.drawSprite(tile));
          });
       },
    };
