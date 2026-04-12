@@ -50,3 +50,4 @@ Tileset
 tilesets
 tilewidth
 unuse
+walkthru
