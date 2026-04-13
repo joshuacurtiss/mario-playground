@@ -32,7 +32,10 @@ function bouncingFireball(player: Char): BouncingFireballComp {
    }
    function handleBlockCollision(_obj: GameObj, col?: Collision) {
       if (!col) return;
-      if (col.normal.y < 0) {
+      if (col.target.is('immovable') && col.target.opacity === 0) {
+         // Don't collide with invisible immovable objects (e.g. invisible blocks)
+         col.preventResolution();
+      } else if (col.normal.y < 0) {
          // Bounce off block/ground
          col.source.vel.y = -600;
       } else if (col.target.is('walkthru')) {

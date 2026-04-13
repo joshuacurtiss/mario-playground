@@ -18,6 +18,10 @@ export type HeadbuttableItem = CoinPop | Powerup;
 export type CollectibleItem = Coin | Powerup;
 export type ItemFactory = (pos: Vec2, options?: Record<string, any>) => GameObj;
 
+export function isHeadbuttable(obj?: GameObj): obj is Headbuttable {
+   return !!obj && obj.has('sprite') && obj.has('pos') && obj.has('area') && obj.has('body') && obj.has('opacity') && obj.has('scale');
+}
+
 export const factories = {
    "block": makeBlock,
    "brick": makeBrick,

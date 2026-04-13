@@ -1,12 +1,16 @@
 import k, { scale } from '../../kaplayCtx';
 import { Comp, GameObj, Vec2 } from 'kaplay';
-import { HeadbuttableComps } from '../index';
+import { HeadbuttableComps, isHeadbuttable } from '../index';
 import { Char, isChar } from '../../chars';
 
 type Dir = 1 | -1;
 
 export interface BumpComp extends Comp {
    bump: (speed?: Vec2, dir?: Dir, bumper?: Char) => void;
+}
+
+export function isHeadbuttableWithBump(obj?: GameObj): obj is HeadbuttableWithBump {
+   return isHeadbuttable(obj) && obj.has('bump');
 }
 
 export type HeadbuttableWithBump = GameObj<HeadbuttableComps & BumpComp>;

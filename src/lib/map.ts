@@ -1,11 +1,14 @@
 import { Collision, GameObj, Vec2 } from 'kaplay';
 import k from '../kaplayCtx';
+import { isGameObjWithArea, isGameObjWithBody, isGameObjWithOpacity, isGameObjWithPos } from './type-guards';
 import { isChar } from '../chars';
 import { factories as itemFactories, ItemFactory } from '../items';
+import { isHeadbuttableWithBump } from '../items/abilities/bump';
 import { factories as enemyFactories, isEnemy } from '../enemies';
 import { isFireball } from '../chars/abilities/fireball';
 import enemySpriteData from '../../public/assets/sprites/enemies.json';
 import itemSpriteData from '../../public/assets/sprites/items.json';
+import { isPowerup } from '../items/powerup';
 
 const ITEMS_LAYER_NAME = 'items';
 const ENEMIES_LAYER_NAME = 'enemies';
@@ -210,7 +213,36 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
 
          if (kind in itemFactories) {
             const fac = itemFactories[kind as keyof typeof itemFactories] as ItemFactory;
-            fac(pos, { ...options, type, items });
+            const item = fac(pos, { ...options, type, items });
+            // Explicitly set opacity. And if its under 0.25, make it invisible (0). We do this so the
+            // Tiled map designer can see the invisible items in the editor.
+            if (!isGameObjWithOpacity(item)) return;
+            item.opacity = object.opacity >= 0.25 ? object.opacity : 0;
+            // And if the item is indeed invisible and headbuttable, apply physics so you'll fall thru it unless you headbutt it from below.
+            if (item.opacity === 0 && isHeadbuttableWithBump(item)) {
+               item.onBeforePhysicsResolve((col: Collision) => {
+                  const isPowerupOrFireball = isPowerup(col.target) || isFireball(col.target);
+                  if (isPowerupOrFireball && item.opacity === 0) {
+                     col.preventResolution();
+                     return;
+                  }
+                  const target = isChar(col.target) || isEnemy(col.target) ? col.target : null;
+                  if (!target) return;
+                  if (item.opacity > 0) return;
+                  const vy = target.vel?.y ?? 0;
+                  if (vy > 0 || !col.isBottom()) {
+                     col.preventResolution();
+                     return;
+                  }
+                  const targetPts = target.worldArea?.().pts ?? [];
+                  const targetTop = targetPts.length ? Math.min(...targetPts.map((p: Vec2)=>p.y)) : target.pos.y;
+                  const itemPts = item.worldArea?.().pts ?? [];
+                  const itemBottom = itemPts.length ? Math.max(...itemPts.map((p: Vec2)=>p.y)) : item.pos.y;
+                  const previousTop = targetTop - vy * k.dt();
+                  const cameFromBelow = previousTop >= itemBottom - this.scale;
+                  if (!cameFromBelow) col.preventResolution();
+               });
+            }
          }
       },
       spawnEnemy(object: TiledObject): void {

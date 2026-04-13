@@ -1,6 +1,7 @@
 import k, { scale } from "../../kaplayCtx";
-import { Comp, Vec2 } from 'kaplay';
+import { Comp, GameObj, Vec2 } from 'kaplay';
 import { Enemy } from '../index';
+import { isGameObjWithOpacity } from "../../lib/type-guards";
 
 export interface AvoidCliffComp extends Comp {
    get groundTag(): string | string[];
@@ -31,8 +32,11 @@ const optionDefaults: AvoidCliffCompOpt = {
    groundTag: ['immovable', 'ground', 'walkthru'],
 };
 
-function isGround(obj: any, groundTag: string | string[]): boolean {
-   return Array.isArray(groundTag) ? groundTag.some(t => obj?.is(t)) : obj?.is(groundTag);
+function isGround(obj?: GameObj, groundTag?: string | string[]): boolean {
+   if (!obj) return false;
+   const isGroundTag = Array.isArray(groundTag) ? groundTag.some(t => obj?.is(t)) : obj?.is(groundTag ?? '');
+   const isVisible = isGameObjWithOpacity(obj) ? obj.opacity > 0 : true;
+   return isGroundTag && isVisible;
 }
 
 export function avoidCliff(options: Partial<AvoidCliffCompOpt> = {}): AvoidCliffComp {

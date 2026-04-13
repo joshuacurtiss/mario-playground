@@ -2,6 +2,7 @@ import k, { scale } from '../kaplayCtx';
 import type { AreaComp, GameObj, SpriteComp, PosComp, BodyComp, ScaleComp, Vec2, Comp, ZComp, Collision, OpacityComp } from 'kaplay';
 import { points, PointsComp } from '../shared-abilities/points';
 import { makeIndicator } from '../ui/indicator';
+import { isGameObjWithOpacity } from '../lib/type-guards';
 
 export const POWERUP_TYPES = ['mushroom', 'flower', 'leaf', 'star', '1up'] as const;
 export type PowerupType = typeof POWERUP_TYPES[number];
@@ -160,7 +161,13 @@ export function powerup(options: Partial<PowerupCompOpt> = {}): PowerupComp {
          });
          // Change direction when bumping into things
          const handleCollide = (obj: GameObj, col?: Collision)=>{
+            // Only bump into immovable objects
             if (!obj.is('immovable')) {
+               col?.preventResolution();
+               return;
+            }
+            // If it's immovable but invisible, don't collide
+            if (isGameObjWithOpacity(obj) && obj.opacity === 0) {
                col?.preventResolution();
                return;
             }
