@@ -92,6 +92,21 @@ interface TiledListProperty {
    value: any;
 }
 
+interface TiledObject {
+   gid: number;
+   id: number;
+   name: string;
+   opacity: number;
+   rotation: number;
+   type: string;
+   visible: boolean;
+   x: number;
+   y: number;
+   width: number;
+   height: number;
+   properties?: TiledListProperty[];
+}
+
 /**
  * Receives a properties list from a Tiled object, which is an array of objects with "name" and "value"
  * properties, and converts it to a single object where the keys are the property names and the values are
@@ -125,51 +140,13 @@ function convertPropertiesListToObj(properties?: TiledListProperty[]): Record<st
    return obj;
 }
 
-function spawnEnemyByTag(tag: string, pos: Vec2, properties?: TiledListProperty[]): void {
-   // Typically the tag will be in the format "kind-type", where "kind" is the enemy, like "goomba", and "type" is the specific variety, like "brn" or "red".
-   // But if you need to override the kind or type, you can provide it as a property in Tiled. There is no known use case for this, but it's there if you need
-   // it and follows the same pattern as spawnItemByTag for consistency.
-   const {kind: kindProp, type: typeProp, ...options} = convertPropertiesListToObj(properties);
-   const parts = tag.split('-');
-   const char = kindProp ?? parts[0];
-   const type = typeProp ?? parts[1];
-   if (char in enemyFactories) {
-      const fac = enemyFactories[char as keyof typeof enemyFactories];
-      fac(pos, { ...options, type });
-   }
-}
-
-function spawnItemByTag(tag: string, pos: Vec2, properties?: TiledListProperty[]): void {
-   // Typically the tag will be in the format "kind-type", where "kind" is the item, like "block", and "type" is the specific variety, like "question" or "brick".
-   // But if you need to override the kind or type, you can provide it as a property in Tiled. A good example use case is if you have a coin, but you specifically
-   // want it to be a "coinwithbody" which isn't a tagged sprite, then you would define "kind": "coinwithbody" in the Tiled properties for that item.
-   const {items: itemsProp, kind: kindProp, type: typeProp, ...options} = convertPropertiesListToObj(properties);
-   const kind = kindProp ?? tag.split('-')[0];
-   const type = typeProp ?? tag.split('-')[1];
-
-   const items = itemsProp?.map((obj: string): ItemFactoryDescription => {
-      if (typeof obj === 'string') return { item: obj };
-      if (isItemFactoryDescription(obj)) return obj;
-      throw new Error(`Invalid item factory description: ${JSON.stringify(obj)}`);
-   }).map((obj: ItemFactoryDescription) => {
-      if (typeof obj.item === 'string') return { ...obj, item: convertToItemFactory(obj.item) };
-      else throw new Error(`Item factory description must be a string: ${JSON.stringify(obj)}`);
-   }).map((obj: ItemFactoryDescription) => {
-      if (typeof obj.item !== 'function') throw new Error(`Item factory could not be resolved to a function: ${JSON.stringify(obj)}`);
-      return obj.item(pos, obj.options);
-   }) ?? [];
-
-   if (kind in itemFactories) {
-      const fac = itemFactories[kind as keyof typeof itemFactories] as ItemFactory;
-      fac(pos, { ...options, type, items });
-   }
-}
-
 export default function makeMap(mapData: any, position: Vec2, scale: number) {
    const tilesets: TilesetLookup[] = mapData.tilesets.map((tileset: any) => ({
       sprite: tileset.source.replace(/\.\w+$/, ''),
       firstgid: tileset.firstgid,
    }));
+   const itemsFirstGid = tilesets.find((ts) => ts.sprite === 'items')?.firstgid ?? 0;
+   const enemiesFirstGid = tilesets.find((ts) => ts.sprite === 'enemies')?.firstgid ?? 0;
    return {
       tilesData: [] as TileData[],
       spawn: [] as SpawnPoint[],
@@ -178,6 +155,81 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
       mapData,
       scale,
       images: [] as GameObj[],
+      spawnCollider(object: TiledObject): void {
+         const collider = k.add([
+            k.area({ shape: new k.Rect(k.vec2(0), object.width, object.height) }),
+            k.scale(this.scale),
+            k.pos(this.mapOriginPos.add(object.x, object.y).scale(this.scale)),
+            k.body({ isStatic: true }),
+            object.type.length ? object.type : 'immovable', // Name the type, with default 'immovable'
+         ]);
+         if (object.type === 'walkthru') {
+            const platformPts = collider.worldArea().pts;
+            const platformTop = Math.min(...platformPts.map((p: Vec2)=>p.y));
+            collider.onBeforePhysicsResolve((col: Collision) => {
+               // For one-way platforms, only resolve when target approached from above while falling.
+               const target = isChar(col.target) || isEnemy(col.target) || isFireball(col.target) ? col.target : null;
+               if (!target) return;
+               const vy = target.vel?.y ?? 0;
+               if (vy<0 || !col.isTop()) {
+                  col.preventResolution();
+                  return;
+               }
+               const targetPts = target.worldArea?.().pts ?? [];
+               const targetBottom = targetPts.length ? Math.max(...targetPts.map((p: Vec2)=>p.y)) : target.pos.y;
+               const previousBottom = targetBottom - vy * k.dt();
+               const cameFromAbove = previousBottom <= platformTop + this.scale;
+               if (!cameFromAbove) col.preventResolution();
+            });
+         }
+      },
+      spawnItem(object: TiledObject): void {
+         const tag = getFrameTag(object.gid - itemsFirstGid, ITEM_FRAME_TAGS);
+         if (!tag) return;
+         const pos = this.mapOriginPos.add(object.x, object.y-this.tileSize).scale(this.scale);
+         // Typically the tag will be in the format "kind-type", where "kind" is the item, like "block", and "type"
+         // is the specific variety, like "question" or "brick". But if you need to override the kind or type, you
+         // can provide it as a property in Tiled. A good example use case is if you have a coin, but you specifically
+         // want it to be a "coinwithbody" which isn't a tagged sprite, then you would define "kind": "coinwithbody"
+         // in the Tiled properties for that item.
+         const {items: itemsProp, kind: kindProp, type: typeProp, ...options} = convertPropertiesListToObj(object.properties);
+         const kind = kindProp ?? tag.split('-')[0];
+         const type = typeProp ?? tag.split('-')[1];
+
+         const items = itemsProp?.map((obj: string): ItemFactoryDescription => {
+            if (typeof obj === 'string') return { item: obj };
+            if (isItemFactoryDescription(obj)) return obj;
+            throw new Error(`Invalid item factory description: ${JSON.stringify(obj)}`);
+         }).map((obj: ItemFactoryDescription) => {
+            if (typeof obj.item === 'string') return { ...obj, item: convertToItemFactory(obj.item) };
+            else throw new Error(`Item factory description must be a string: ${JSON.stringify(obj)}`);
+         }).map((obj: ItemFactoryDescription) => {
+            if (typeof obj.item !== 'function') throw new Error(`Item factory could not be resolved to a function: ${JSON.stringify(obj)}`);
+            return obj.item(pos, obj.options);
+         }) ?? [];
+
+         if (kind in itemFactories) {
+            const fac = itemFactories[kind as keyof typeof itemFactories] as ItemFactory;
+            fac(pos, { ...options, type, items });
+         }
+      },
+      spawnEnemy(object: TiledObject): void {
+         const tag = getFrameTag(object.gid - enemiesFirstGid, ENEMY_FRAME_TAGS);
+         if (!tag) return;
+         const pos = this.mapOriginPos.add(object.x+this.tileSize, object.y).scale(this.scale);
+         // Typically the tag will be in the format "kind-type", where "kind" is the enemy, like "goomba", and "type"
+         // is the specific variety, like "brn" or "red". But if you need to override the kind or type, you can provide
+         // it as a property in Tiled. There is no known use case for this, but it's there if you need it and follows
+         // the same pattern as spawnItemByTag for consistency.
+         const {kind: kindProp, type: typeProp, ...options} = convertPropertiesListToObj(object.properties);
+         const parts = tag.split('-');
+         const char = kindProp ?? parts[0];
+         const type = typeProp ?? parts[1];
+         if (char in enemyFactories) {
+            const fac = enemyFactories[char as keyof typeof enemyFactories];
+            fac(pos, { ...options, type });
+         }
+      },
       generateTilesData() {
          const images: GameObj[] = [];
          let imageZ = -100;
@@ -250,65 +302,21 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
             }
             if (layer.type === LAYER_TYPE.OBJECTGROUP) {
                if (layer.name === ITEMS_LAYER_NAME) {
-                  // Get items first gid
-                  const itemsFirstGid = tilesets.find((ts) => ts.sprite === 'items')?.firstgid ?? 0;
                   // Loop over ITEMS
-                  for (const obj of layer.objects) {
-                     const tag = getFrameTag(obj.gid - itemsFirstGid, ITEM_FRAME_TAGS);
-                     if (tag) {
-                        spawnItemByTag(tag, this.mapOriginPos.add(obj.x, obj.y-this.tileSize).scale(this.scale), obj.properties);
-                     }
-                  }
+                  layer.objects.forEach(this.spawnItem.bind(this));
                } else if (layer.name === ENEMIES_LAYER_NAME) {
-                  // Get enemies first gid
-                  const enemiesFirstGid = tilesets.find((ts) => ts.sprite === 'enemies')?.firstgid ?? 0;
                   // Loop over ENEMIES
-                  for (const obj of layer.objects) {
-                     const tag = getFrameTag(obj.gid - enemiesFirstGid, ENEMY_FRAME_TAGS);
-                     if (tag) {
-                        spawnEnemyByTag(tag, this.mapOriginPos.add(obj.x+this.tileSize, obj.y).scale(this.scale), obj.properties);
-                     }
-                  }
+                  layer.objects.forEach(this.spawnEnemy.bind(this));
                } else if (layer.name === SPAWN_LAYER_NAME) {
-                  const spawn: SpawnPoint[] = [];
-                  for (const obj of layer.objects) {
-                     spawn.push({
-                        name: obj.name,
-                        type: obj.type,
-                        pos: this.mapOriginPos.add(obj.x, obj.y).scale(this.scale),
-                     });
-                  }
-                  this.spawn = spawn;
+                  // Store SPAWN POINTS for later use
+                  this.spawn = layer.objects.map((obj: TiledObject) => ({
+                     name: obj.name,
+                     type: obj.type,
+                     pos: this.mapOriginPos.add(obj.x, obj.y).scale(this.scale),
+                  }));
                } else {
-                  for (const object of layer.objects) {
-                     // Treat any remaining object layers as static collision layers
-                     const collider = k.add([
-                        k.area({ shape: new k.Rect(k.vec2(0), object.width, object.height) }),
-                        k.scale(this.scale),
-                        k.pos(this.mapOriginPos.add(object.x, object.y).scale(this.scale)),
-                        k.body({ isStatic: true }),
-                        object.type.length ? object.type : 'immovable', // Name the type, with default 'immovable'
-                     ]);
-                     if (object.type === 'walkthru') {
-                        const platformPts = collider.worldArea().pts;
-                        const platformTop = Math.min(...platformPts.map((p: Vec2)=>p.y));
-                        collider.onBeforePhysicsResolve((col: Collision) => {
-                           // For one-way platforms, only resolve when target approached from above while falling.
-                           const target = isChar(col.target) || isEnemy(col.target) || isFireball(col.target) ? col.target : null;
-                           if (!target) return;
-                           const vy = target.vel?.y ?? 0;
-                           if (vy<0 || !col.isTop()) {
-                              col.preventResolution();
-                              return;
-                           }
-                           const targetPts = target.worldArea?.().pts ?? [];
-                           const targetBottom = targetPts.length ? Math.max(...targetPts.map((p: Vec2)=>p.y)) : target.pos.y;
-                           const previousBottom = targetBottom - vy * k.dt();
-                           const cameFromAbove = previousBottom <= platformTop + this.scale;
-                           if (!cameFromAbove) col.preventResolution();
-                        });
-                     }
-                  }
+                  // Treat any remaining object layers as static collision layers
+                  layer.objects.forEach(this.spawnCollider.bind(this));
                }
             }
          }
