@@ -116,6 +116,10 @@ export default async function() {
       } else if (keyLog.endsWith('hurt')) {
          player.hurt();
          k.debug.log('If you say so... OW!');
+      } else if (keyLog.endsWith('flower')) {
+         player.size = 'lg';
+         player.power = 'fire';
+         k.debug.log('Those who play with fire get burned! Oh wait, you wanted this? Enjoy your new fire powers!');
       } else if (keyLog.endsWith('raccoon')) {
          player.size = 'lg';
          player.power = 'raccoon';
