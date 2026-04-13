@@ -56,6 +56,7 @@ export function items(items: HeadbuttableItem | HeadbuttableItem[], options: Par
          return item;
       },
       packItem(obj: HeadbuttableItem) {
+         obj.opacity = 0;
          obj.pos = obj.pos.add(k.vec2(8, 2).scale(scale));
          obj.scale = obj.scale.scale(0.1);
          obj.paused = true;
@@ -63,6 +64,7 @@ export function items(items: HeadbuttableItem | HeadbuttableItem[], options: Par
       unpackItem(this: HeadbuttableWithItems, obj: HeadbuttableItem) {
          obj.pos = this.pos.clone();
          obj.scale = obj.scale.scale(10);
+         obj.opacity = 1;
          obj.paused = false;
       },
       add(this: HeadbuttableWithItems) {

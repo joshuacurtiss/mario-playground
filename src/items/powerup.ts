@@ -1,5 +1,5 @@
 import k, { scale } from '../kaplayCtx';
-import type { AreaComp, GameObj, SpriteComp, PosComp, BodyComp, ScaleComp, Vec2, Comp, ZComp, Collision } from 'kaplay';
+import type { AreaComp, GameObj, SpriteComp, PosComp, BodyComp, ScaleComp, Vec2, Comp, ZComp, Collision, OpacityComp } from 'kaplay';
 import { points, PointsComp } from '../shared-abilities/points';
 import { makeIndicator } from '../ui/indicator';
 
@@ -7,7 +7,7 @@ export const POWERUP_TYPES = ['mushroom', 'flower', 'leaf', 'star', '1up'] as co
 export type PowerupType = typeof POWERUP_TYPES[number];
 export type Dir = -1 | 1;
 
-export type Powerup = GameObj<SpriteComp & PosComp & BodyComp & AreaComp & ScaleComp & ZComp & PointsComp & PowerupComp>;
+export type Powerup = GameObj<SpriteComp & PosComp & OpacityComp & BodyComp & AreaComp & ScaleComp & ZComp & PointsComp & PowerupComp>;
 
 export function isPowerupType(value: unknown): value is PowerupType {
    return typeof value === 'string' && POWERUP_TYPES.includes(value as any);
@@ -187,6 +187,7 @@ export function makePowerup(pos: Vec2, options: Partial<PowerupOpt> = {}): Power
       k.pos(pos),
       k.body({ isStatic: true, maxVelocity: opts.type === 'leaf' ? 175 : undefined }),
       k.area({ collisionIgnore: [ 'powerup', 'coin', 'coinpop', 'enemy', 'immovable', 'player' ] }),
+      k.opacity(),
       k.scale(scale),
       k.z(-1),
       points(opts.points),

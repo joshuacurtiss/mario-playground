@@ -30,6 +30,7 @@ export function makeBrick(pos: Vec2, options: BrickOpt = {}): Brick {
       k.area({shape: new k.Rect(k.vec2(1, 0), 14, 16) }),
       k.body({ isStatic: true }),
       k.scale(scale),
+      k.opacity(),
       breaks(),
       bump(),
       items(itemsArray ?? []),

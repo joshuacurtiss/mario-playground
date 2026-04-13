@@ -1,4 +1,4 @@
-import { AreaComp, BodyComp, GameObj, PosComp, ScaleComp, SpriteComp, Vec2 } from "kaplay";
+import { AreaComp, BodyComp, GameObj, OpacityComp, PosComp, ScaleComp, SpriteComp, Vec2 } from "kaplay";
 import { makeBlock } from './block';
 import { makeBrick } from './brick';
 import { Coin, makeCoin, makeCoinWithBody } from './coin';
@@ -8,6 +8,7 @@ import { Powerup, makePowerup, make1Up, makeMushroom, makeFlower, makeLeaf, make
 export type HeadbuttableComps =
    SpriteComp &
    PosComp &
+   OpacityComp &
    AreaComp &
    BodyComp &
    ScaleComp;

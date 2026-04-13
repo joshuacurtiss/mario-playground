@@ -1,12 +1,12 @@
 import k, { scale } from '../kaplayCtx';
-import { BodyComp, Comp, GameObj, PosComp, ScaleComp, SpriteComp, Vec2, ZComp } from 'kaplay';
+import { BodyComp, Comp, GameObj, OpacityComp, PosComp, ScaleComp, SpriteComp, Vec2, ZComp } from 'kaplay';
 import type { CoinType } from './coin';
 import { makeIndicator } from '../ui/indicator';
 import { points, PointsComp } from '../shared-abilities/points';
 
 // GameObj and its Factory Options
 
-export type CoinPop = GameObj<SpriteComp & PosComp & BodyComp & PointsComp & ScaleComp & ZComp & CoinPopComp>;
+export type CoinPop = GameObj<SpriteComp & PosComp & OpacityComp & BodyComp & PointsComp & ScaleComp & ZComp & CoinPopComp>;
 
 export interface CoinPopOpt {
    type: CoinType;
@@ -80,6 +80,7 @@ export function makeCoinPop(pos: Vec2, options: Partial<CoinPopOpt> = {}): CoinP
       k.sprite('items', { anim: `coinpop-${opts.type}` }),
       k.pos(pos),
       k.body({ isStatic: true, gravityScale: 1.4 }),
+      k.opacity(),
       k.scale(scale),
       k.z(-1),
       points(opts.points),

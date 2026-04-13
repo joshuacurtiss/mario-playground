@@ -34,6 +34,7 @@ export function bump(masterSpeed = k.vec2(0, -3.75*scale)): BumpComp {
       },
       bump(this: HeadbuttableWithBump, speed = masterSpeed, dir, bumper) {
          if (bumping) return; // Already bumping
+         this.opacity = 1;
          let { x, y } = speed;
          // Only single-axis bump, or equal on both axes
          if (Math.abs(x)!==Math.abs(y) && x!==0 && y!==0) {

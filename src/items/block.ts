@@ -26,6 +26,7 @@ export function makeBlock(pos: Vec2, options: BlockOpt = {}): Block {
    return k.add([
       k.sprite('items', { anim: `block-${type}` }),
       k.pos(pos),
+      k.opacity(),
       k.area({shape: new k.Rect(k.vec2(1, 0), 14, 16) }),
       k.body({ isStatic: true }),
       k.scale(scale),
