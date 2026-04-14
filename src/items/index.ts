@@ -3,6 +3,7 @@ import { makeBlock } from './block';
 import { makeBrick } from './brick';
 import { Coin, makeCoin, makeCoinWithBody } from './coin';
 import { CoinPop, makeCoinPop } from './coinpop';
+import { Goal, makeGoal } from './goal';
 import { Powerup, makePowerup, make1Up, makeMushroom, makeFlower, makeLeaf, makeStar } from './powerup';
 
 export type HeadbuttableComps =
@@ -15,6 +16,7 @@ export type HeadbuttableComps =
 
 export type Headbuttable = GameObj<HeadbuttableComps>;
 export type HeadbuttableItem = CoinPop | Powerup;
+export type { Goal } from './goal';
 export type CollectibleItem = Coin | Powerup;
 export type ItemFactory = (pos: Vec2, options?: Record<string, any>) => GameObj;
 
@@ -28,6 +30,7 @@ export const factories = {
    "coin": makeCoin,
    "coinwithbody": makeCoinWithBody,
    "coinpop": makeCoinPop,
+   "goal": makeGoal,
    "powerup": makePowerup,
    "1up": make1Up,
    "mushroom": makeMushroom,
@@ -40,4 +43,5 @@ export { makeBlock } from './block';
 export { makeBrick } from './brick';
 export { makeCoin, makeCoinWithBody } from './coin';
 export { makeCoinPop } from './coinpop';
+export { makeGoal } from './goal';
 export { makePowerup, make1Up, makeMushroom, makeFlower, makeLeaf, makeStar } from './powerup';
