@@ -80,6 +80,7 @@ export interface GeneralComp extends Comp {
    set power(val: Power);
    get runTime(): number;
    set runTime(val: number);
+   get speeds(): GeneralCompOpt['speeds'];
    get debug(): string;
    getControls(): {
       up: boolean;
@@ -94,6 +95,7 @@ export interface GeneralComp extends Comp {
    getSprite(): string;
    setSprite(newSprite: string): void;
    updateAreaRect(): void;
+   clearMovement(): void;
    die(): void;
    hurt(): void;
    handleCollideEnemy(enemy: Enemy, col?: Collision): void;
@@ -169,6 +171,9 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          const c = this.getControls();
          return c.turbo && _runTime>=prunThreshold && (c.leftOrRight || !this.isGrounded());
       },
+      get speeds() {
+         return speeds;
+      },
       get debug() {
          return _debug;
       },
@@ -195,6 +200,18 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          ) {
             this.area.shape = rect.clone();
          }
+      },
+      clearMovement(this: Char) {
+         momentum = 0;
+         jumpCombo = 0;
+         this.vel = k.vec2(0);
+         this.runTime = 0;
+         this.animSpeed = 1;
+         this.stop();
+         runSound.stop();
+         skidSound.stop();
+         this.trigger('prunCountChanged', 0);
+         this.trigger('prunningChanged', false);
       },
       die(this: Char) {
          if (this.isFrozen || this.isInvulnerable) return;
