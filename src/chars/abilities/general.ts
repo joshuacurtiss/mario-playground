@@ -101,6 +101,7 @@ export interface GeneralComp extends Comp {
    handleCollectItem(item: CollectibleItem): void;
    handlePhysics(col: Collision): void;
    handleJump(): void;
+   isOnWalkthruPlatform(): boolean;
 }
 
 export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
@@ -299,11 +300,23 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          // Any other case, only jump if grounded
          if (!this.isGrounded()) return;
          k.play('jump');
+         // If crouching on a one-way platform, drop through instead of jumping.
+         if (k.isButtonDown('down') && this.isOnWalkthruPlatform()) {
+            this.moveBy(0, 2 * scale);
+            return;
+         }
          // Implement jump force based on momentum and run state
          let jumpForce = jumpForces[_size];
          if (k.isButtonDown('turbo') && momentum) jumpForce *= 1.1;
          if (this.isPRunning()) jumpForce *= 1.1;
          this.variableJump(jumpForce);
+      },
+      isOnWalkthruPlatform(this: Char) {
+         const shape = this.worldArea();
+         const bottomY = Math.max(...shape.pts.map((p) => p.y));
+         // Cast from feet to detect if the nearest supporting surface is one-way.
+         const hit = k.raycast(k.vec2(this.pos.x, bottomY - scale), k.vec2(0, 4 * scale));
+         return !!hit?.object?.is('walkthru');
       },
       add(this: Char) {
          this.onBeforePhysicsResolve(this.handlePhysics);
@@ -370,9 +383,9 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          let animSpeed = momentum ? Math.abs(momentum)/maxSpeed * (c.turbo ? 3 : 1.2) : 1;
          if (prunning && this.isGrounded()) anim = 'run';
          else if (prunning) anim = (this.hasStarPower && _size==='lg') ? 'somersault' : 'pjump';
-         else if (!this.isGrounded()) anim = (this.hasStarPower && _size==='lg') ? 'somersault' : 'jump';
+         else if (!this.isGrounded() || this.vel.y > 75) anim = (this.hasStarPower && _size==='lg') ? 'somersault' : 'jump';
          else if (skidding) anim = 'skid';
-         else if (c.down) anim = 'duck';
+         else if (c.down) anim = _size === 'lg' ? 'duck' : 'idle';
          else if (moving) anim = 'walk';
          else if (this.isGrounded() && c.up && this.power !== 'raccoon') anim = 'lookup';
          // Do not interrupt certain animations until they're done. If they are set to not loop,
