@@ -101,7 +101,7 @@ interface Coord {
 }
 
 interface TiledObject {
-   gid: number;
+   gid?: number;
    id: number;
    name: string;
    opacity: number;
@@ -195,9 +195,12 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
          }
       },
       spawnItem(object: TiledObject): void {
-         const tag = getFrameTag(object.gid - itemsFirstGid, ITEM_FRAME_TAGS);
+         // If gid is present, do frame tag lookup. Otherwise, use object name as tag.
+         // We use this, for instance, for the "goal" item, which is not represented by a specific tile.
+         const tag = !!object.gid ? getFrameTag(object.gid - itemsFirstGid, ITEM_FRAME_TAGS) : object.name;
          if (!tag) return;
-         const pos = this.mapOriginPos.add(object.x, object.y-this.tileSize).scale(this.scale);
+         const offsetY = !!object.gid ? -this.tileSize : 0; // If it's a tile, anchor to bottom. Otherwise, anchor to top.
+         const pos = this.mapOriginPos.add(object.x, object.y + offsetY).scale(this.scale);
          // Typically the tag will be in the format "kind-type", where "kind" is the item, like "block", and "type"
          // is the specific variety, like "question" or "brick". But if you need to override the kind or type, you
          // can provide it as a property in Tiled. A good example use case is if you have a coin, but you specifically
@@ -254,9 +257,11 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
          }
       },
       spawnEnemy(object: TiledObject): void {
-         const tag = getFrameTag(object.gid - enemiesFirstGid, ENEMY_FRAME_TAGS);
+         // If gid is present, do frame tag lookup. Otherwise, use object name as tag.
+         const tag = !!object.gid ? getFrameTag(object.gid - enemiesFirstGid, ENEMY_FRAME_TAGS) : object.name;
          if (!tag) return;
-         const pos = this.mapOriginPos.add(object.x+this.tileSize, object.y).scale(this.scale);
+         const offsetX = !!object.gid ? this.tileSize : 0; // If it's a tile, anchor to center. Otherwise, anchor to left.
+         const pos = this.mapOriginPos.add(object.x + offsetX, object.y).scale(this.scale);
          // Typically the tag will be in the format "kind-type", where "kind" is the enemy, like "goomba", and "type"
          // is the specific variety, like "brn" or "red". But if you need to override the kind or type, you can provide
          // it as a property in Tiled. There is no known use case for this, but it's there if you need it and follows
