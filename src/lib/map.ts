@@ -95,6 +95,11 @@ interface TiledListProperty {
    value: any;
 }
 
+interface Coord {
+   x: number;
+   y: number;
+}
+
 interface TiledObject {
    gid: number;
    id: number;
@@ -107,6 +112,7 @@ interface TiledObject {
    y: number;
    width: number;
    height: number;
+   polygon?: Coord[];
    properties?: TiledListProperty[];
 }
 
@@ -159,8 +165,10 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
       scale,
       images: [] as GameObj[],
       spawnCollider(object: TiledObject): void {
+         const polygon = object.polygon?.map((point) => k.vec2(point.x, point.y));
+         const shape = polygon && polygon.length >= 3 ? new k.Polygon(polygon) : new k.Rect(k.vec2(0), object.width, object.height);
          const collider = k.add([
-            k.area({ shape: new k.Rect(k.vec2(0), object.width, object.height) }),
+            k.area({ shape }),
             k.scale(this.scale),
             k.pos(this.mapOriginPos.add(object.x, object.y).scale(this.scale)),
             k.body({ isStatic: true }),
