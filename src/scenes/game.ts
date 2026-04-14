@@ -1,5 +1,5 @@
 import k, { debug, scale } from '../kaplayCtx';
-import { BodyComp, GameObj, PosComp } from 'kaplay';
+import { BodyComp, GameObj, PosComp, Vec2 } from 'kaplay';
 import makeMap from '../lib/map';
 import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makeMario } from '../chars/mario';
@@ -40,6 +40,22 @@ export default async function() {
    const camMinX = worldMinX + halfWidth;
    const camMaxX = worldMaxX - halfWidth;
 
+   /**
+    * Calculates the desired camera destination based on an object's position (optionally, provide its
+    * height, otherwise we assume 32px). This does not handle the interpolation for smooth movement,
+    * just the raw target destination.
+    */
+   function calcCamDest(pos: Vec2, height: number = 32): Vec2 {
+      const topMargin = height * scale * 0.75;    // space between player and top of screen
+      const bottomMargin = height * scale * 0.25; // space between player and bottom of screen
+      const upFollowStart = height * scale;       // start following up sooner
+      const targetY = pos.y < upFollowStart
+         ? halfHeight + pos.y - height - topMargin
+         : pos.y > groundMaxY + bottomMargin ? pos.y : halfHeight;
+      const targetX = camMinX > camMaxX ? (worldMinX + worldMaxX) / 2 : clamp(pos.x, camMinX, camMaxX);
+      return k.vec2(targetX, targetY);
+   }
+
    // UI
    const ui = k.add([
       k.fixed(),
@@ -61,8 +77,10 @@ export default async function() {
    hud.world = 1;
    hud.time = endTime - k.time();
 
-   // Player
+   // Player (move camera to spawn point first, in case the spawn is initially off-camera)
    const playerSpawnPos = k.choose(map.spawn.filter(s=>s.name === 'player' || s.name === 'mario')).pos;
+   k.setCamPos(calcCamDest(playerSpawnPos));
+   await k.wait(0); // Wait a tick to ensure the camera position is set before we spawn the player
    const player = makeMario(playerSpawnPos);
    player.on('die', () => {
       // Fade to black and go home
@@ -172,14 +190,7 @@ export default async function() {
          player.moveTo(player.pos.x, -fullHeight*2);
          return;
       }
-      const topMargin = player.height * scale * 0.75;    // space between player and top of screen
-      const bottomMargin = player.height * scale * 0.25; // space between player and bottom of screen
-      const upFollowStart = player.height * scale;       // start following up sooner
-      const targetY = player.pos.y < upFollowStart
-         ? halfHeight + player.pos.y - player.height - topMargin
-         : player.pos.y > groundMaxY + bottomMargin ? player.pos.y : halfHeight;
-      const targetX = camMinX > camMaxX ? (worldMinX + worldMaxX) / 2 : clamp(player.pos.x, camMinX, camMaxX);
-      const camDest = k.getCamPos().lerp(k.vec2(targetX, targetY), 0.08);
+      const camDest = k.getCamPos().lerp(calcCamDest(player.pos, player.height), 0.08);
       k.setCamPos(camDest);
       // Parallax
       const parallaxBase = k.vec2(camDest.x - halfWidth, camDest.y - halfHeight);
