@@ -5,6 +5,7 @@ import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makeMario } from '../chars/mario';
 import { makeHUD } from '../ui/hud';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from '../enemies/goomba';
+import { Goal, GoalItem, isGoalItem, makeFireworks } from '../items/goal';
 
 const gameTime=300;
 
@@ -77,6 +78,13 @@ export default async function() {
    hud.world = 1;
    hud.time = endTime - k.time();
 
+   // Handle the hurry-up music at 60-second mark
+   const hurryTimer = k.wait(gameTime-60, ()=>{
+      // TODO: Stop music
+      k.play('hurry-up');
+      // TODO: Start music at the hurry pace
+   });
+
    // Player (move camera to spawn point first, in case the spawn is initially off-camera)
    const playerSpawnPos = k.choose(map.spawn.filter(s=>s.name === 'player' || s.name === 'mario')).pos;
    k.setCamPos(calcCamDest(playerSpawnPos));
@@ -84,6 +92,7 @@ export default async function() {
    const player = makeMario(playerSpawnPos);
    player.on('die', () => {
       // Fade to black and go home
+      hurryTimer.cancel();
       k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
    });
    player.on('coinsChanged', newCoins=>hud.coins = newCoins);
@@ -92,10 +101,146 @@ export default async function() {
    player.on('prunCountChanged', newCount=>hud.pCount = newCount);
    player.on('prunningChanged', isPrunning=>hud.pDash = isPrunning);
    player.onCollide('die', () => player.die());
+   player.on('goal', async (goal: Goal) => {
+      const goalItem = goal.getCurAnim()?.name;
+      if (!isGoalItem(goalItem)) return;
+
+      // Freeze the player, clear his movement, and set him walking to the right
+      player.isFrozen = true;
+      player.clearMovement();
+      player.flipX = true;
+      player.play(`walk-${player.size}`);
+      player.unuse('offscreen');
+      player.onFixedUpdate(()=>{
+         if (player.pos.x > worldMaxX) return;
+         player.moveBy(player.speeds.walk * k.dt(), 0);
+      });
+
+      // Turn off existing music/sound
+      hurryTimer.cancel();
+      // TODO: Turn off level music
+
+      /**
+       * The async UI process for collecting points for the remaining time.
+       */
+      const collectTimerPoints = async () => {
+         while (hud.time > 0) {
+            const multiplier = hud.time < 10 ? 1 : 10;
+            hud.time -= 1 * multiplier;
+            player.score += 50 * multiplier;
+            k.play('score');
+            await k.wait(0.01);
+         }
+         k.play('score-end');
+      };
+
+      /**
+       * Instantiate a card for display on the ending screen.
+       */
+      const makeCard = (pos: Vec2, item: GoalItem) => {
+         ui.add([
+            k.sprite('ui-hud-cards'),
+            k.pos(pos),
+            k.scale(scale),
+         ]);
+         ui.add([
+            k.sprite('hud-items', { anim: item, animSpeed: 0 }),
+            k.pos(pos.add(3*scale, 5*scale)),
+            k.scale(scale),
+         ]);
+      }
+
+      const runGoalExit = async () => {
+         ui.add([
+            k.text('Course Clear!', { size: 32, align: 'center', width: fullWidth }),
+            k.color(k.WHITE),
+            k.pos(0, fullHeight*0.15),
+         ]);
+         ui.add([
+            k.text('You got a card:', { size: 32, align: 'center', width: fullWidth * 0.9 }),
+            k.color(k.WHITE),
+            k.pos(0, fullHeight*0.3),
+         ]);
+         makeCard(k.vec2(fullWidth*0.6, fullHeight*0.3-8*scale), goalItem);
+      };
+
+      const runGoalExitWithFireworks = async () => {
+         goal.onDestroy(()=>{
+            makeFireworks(goal.pos.add(goal.width/2, 0), goalItem);
+         });
+         k.onFixedUpdate(()=>{
+            if (!goal) return;
+            const camDest = k.getCamPos().lerp(goal.pos.add(goal.width/2, fullHeight*0.15), 0.08);
+            k.setCamPos(camDest);
+         })
+         await k.wait(2);
+         ui.add([
+            k.text('You got a card:', { size: 32, align: 'center', width: fullWidth * 0.9 }),
+            k.color(k.WHITE),
+            k.pos(0, fullHeight*0.7),
+         ]);
+         makeCard(k.vec2(fullWidth*0.6, fullHeight*0.7-8*scale), goalItem);
+      };
+
+      const threeCardMatch = hud.cards[0] === goalItem && hud.cards[1] === goalItem;
+      const music = threeCardMatch ? 'course-clear-fireworks' : 'course-clear';
+      const musicDelay = threeCardMatch ? 0.25 : 2.25;
+      k.play(music);
+      await k.wait(musicDelay, async ()=>{
+         hud.addCard(goalItem);
+         hud.flashCard(hud.cards.length-1);
+         if (threeCardMatch) await runGoalExitWithFireworks();
+         else await runGoalExit();
+      });
+      await k.wait(2);
+      await collectTimerPoints();
+      if (hud.cards.length === 3) {
+         hud.flashCard(1);
+         k.wait(0.5, () => hud.flashCard(0));
+         const cnt = hud.cards.every(c => c === 'star') ? 5 :
+            hud.cards.every(c => c === 'flower') ? 3 :
+            hud.cards.every(c => c === 'mushroom') ? 2 : 1;
+         // Show proper 1/2/3/5-up sprite based on cnt
+         const livesText = ui.add([
+            k.pos(halfWidth, fullHeight + 25 * scale),
+            {
+               fixedUpdate(this: GameObj<PosComp>) {
+                  const livesTextTargetY = fullHeight * 0.63;
+                  if (this.pos.y <= livesTextTargetY) return;
+                  this.pos.y = Math.max(livesTextTargetY, this.pos.y - 1300 * k.dt());
+               },
+            },
+         ]);
+         livesText.add([
+            k.sprite('text-lives', { anim: cnt.toString(), animSpeed: 0 }),
+            k.pos(-8*scale, 0),
+            k.anchor('center'),
+            k.scale(scale),
+         ]);
+         livesText.add([
+            k.sprite('text-lives', { anim: 'up', animSpeed: 0 }),
+            k.pos(8*scale, 0),
+            k.anchor('center'),
+            k.scale(scale),
+         ]);
+         // Count up the lives, then wait a moment before exiting
+         await k.loop(0.6, ()=>{
+            player.lives += 1;
+            k.play('1up');
+         }, cnt);
+      }
+      await k.wait(3);
+      // Exit level. TODO: This will need to become something more graceful then going 'home'.
+      makeFadeOut({ onDone: () => {
+         if (hud.cards.length === 3) hud.cards = [];
+         k.go('home');
+      }});
+   });
    hud.player = player.char;
    hud.lives = player.lives;
    hud.score = player.score;
    hud.coins = player.coins;
+   hud.cards = ['star', 'star'];
 
    // All camera zooming in debug mode
    if (debug) {
