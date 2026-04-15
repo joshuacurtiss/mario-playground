@@ -1,5 +1,5 @@
 import k from '../../kaplayCtx';
-import { Comp } from 'kaplay';
+import { Comp, TimerController } from 'kaplay';
 import { Char } from '../index';
 
 k.loadShader('invert', null, `
@@ -21,23 +21,36 @@ const flashOptionDefaults: FlashOpt = {
 }
 
 export interface FlashComp extends Comp {
+   cancelFlash(): void;
    flash(duration: number, options?: FlashOpt): void;
 }
 
 export function flash(): FlashComp {
    let flashing = false;
+   let timer: TimerController | undefined;
+   let doneFn: (()=>void) | undefined;
    return {
       id: 'flash',
+      cancelFlash() {
+         timer?.cancel();
+         doneFn?.();
+      },
       flash(this: Char, duration: number, options: Partial<FlashOpt> = {}) {
          const { invert, onDone } = Object.assign({}, flashOptionDefaults, options);
+         this.cancelFlash();
          flashing = true;
          if (invert) this.use(k.shader("invert", ()=>({ "u_time": k.time() })));
-         if (!duration) return;
-         k.wait(duration, () => {
+         const finalizeOnce = () => {
+            if (doneFn !== finalizeOnce) return;
+            timer = undefined;
+            doneFn = undefined;
             flashing = false;
             if (invert) this.unuse('shader');
-            if (onDone) onDone.call(this);
-         });
+            onDone?.call(this);
+         };
+         doneFn = finalizeOnce;
+         if (duration > 0) timer = k.wait(duration, finalizeOnce);
+         else finalizeOnce();
       },
       fixedUpdate(this: Char) {
          if (flashing) {
