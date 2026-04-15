@@ -179,7 +179,7 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
             const platformTop = Math.min(...platformPts.map((p: Vec2)=>p.y));
             collider.onBeforePhysicsResolve((col: Collision) => {
                // For one-way platforms, only resolve when target approached from above while falling.
-               const target = isChar(col.target) || isEnemy(col.target) || isFireball(col.target) ? col.target : null;
+               const target = isChar(col.target) || isEnemy(col.target) || isFireball(col.target) || isPowerup(col.target) ? col.target : null;
                if (!target) return;
                const vy = target.vel?.y ?? 0;
                if (vy<0 || !col.isTop()) {
