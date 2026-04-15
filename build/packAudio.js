@@ -22,7 +22,10 @@ function convertAudio(files) {
    files.forEach(fullPath=>{
       const ext = path.extname(fullPath);
       const name = path.basename(fullPath, ext);
-      ffmpeg(fullPath).output(path.resolve(sfxOutputDir, name + '.ogg')).run();
+      ffmpeg(fullPath)
+         .noVideo()
+         .output(path.resolve(sfxOutputDir, name + '.ogg'))
+         .run();
    });
 }
 
