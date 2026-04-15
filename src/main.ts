@@ -46,9 +46,10 @@ import home from "./scenes/home";
 
 // Audio
 [
-   '1up', 'brick-break', 'bump-block', 'coin-special', 'coin', 'die', 'fireball', 'hit',
-   'hurt', 'jump', 'key', 'kick', 'level-enter', 'p-meter', 'pause', 'powerup-appears',
-   'powerup', 'spin', 'skid', 'stomp', 'transform',
+   '1up', 'brick-break', 'bump-block', 'checkpoint', 'coin-special', 'coin', 'course-clear',
+   'course-clear-fireworks', 'die', 'fireball', 'game-over', 'hit', 'hurt', 'hurry-up',
+   'invincible', 'jump', 'key', 'kick', 'level-enter', 'p-meter', 'pause', 'powerup-appears',
+   'powerup', 'score-end', 'score', 'spin', 'skid', 'stomp', 'transform',
 ].forEach(name => {
     k.loadSound(name, `assets/sfx/${name}.ogg`);
 });
