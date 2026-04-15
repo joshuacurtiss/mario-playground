@@ -100,7 +100,11 @@ export default async function() {
    player.on('scoreChanged', newScore=>hud.score = newScore);
    player.on('prunCountChanged', newCount=>hud.pCount = newCount);
    player.on('prunningChanged', isPrunning=>hud.pDash = isPrunning);
-   player.onCollide('die', () => player.die());
+   player.onCollide('die', () => {
+      // When you collide with a 'die' collider, you always die, even if you're invulnerable.
+      player.isInvulnerable = false;
+      player.die();
+   });
    player.on('goal', async (goal: Goal) => {
       const goalItem = goal.getCurAnim()?.name;
       if (!isGoalItem(goalItem)) return;
