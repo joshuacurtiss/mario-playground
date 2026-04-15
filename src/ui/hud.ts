@@ -1,5 +1,13 @@
+import { GOAL_ITEMS } from '../items/goal';
 import k, { scale } from '../kaplayCtx';
 import type { GameObj, PosComp, SpriteComp } from 'kaplay';
+
+const CARD_ANIMS = [...GOAL_ITEMS, 'blank'] as const;
+type CardAnim = typeof CARD_ANIMS[number];
+
+export function isCardAnim(anim?: string): anim is CardAnim {
+   return CARD_ANIMS.includes(anim as CardAnim);
+}
 
 type DigitObj = GameObj<PosComp | SpriteComp>;
 type SingleDigit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
@@ -12,6 +20,7 @@ export function makeHUD() {
    let _score: number;
    let _time: number;
    let _coins: number;
+   let _cards: CardAnim[] = [];
    let _p_count = 0;
    let _p_dash = false;
    const container = k.make([
@@ -25,6 +34,7 @@ export function makeHUD() {
          get lives() { return _lives; },
          get score() { return _score; },
          get time() { return _time; },
+         get cards() { return _cards; },
          get coins() { return _coins; },
          get pCount() { return _p_count; },
          get pDash() { return _p_dash; },
@@ -54,6 +64,14 @@ export function makeHUD() {
             _time = newVal;
             setDigits(timeDigits, newVal, '0');
          },
+         set cards(vals) {
+            _cards = vals;
+            cards.forEach((card, i) => {
+               const item = _cards[i];
+               const anim = item ?? 'blank';
+               card.children[0].play(anim);
+            });
+         },
          set coins(val) {
             if (_coins===val) return;
             _coins = val;
@@ -71,6 +89,20 @@ export function makeHUD() {
          set pDash(val) {
             _p_dash = val;
             if (!_p_dash) pDashIndicator.frame = 0;
+         },
+         addCard(this: GameObj, card: CardAnim) {
+            this.cards = [...this.cards, card];
+         },
+         flashCard(index: number, duration = 0.6, frequency = 20) {
+            if (!Number.isInteger(index) || index < 0 || index >= cards.length) return;
+            const item = cards[index].children[0];
+            k.loop(duration, () => {
+               const curAnim = item.getCurAnim()?.name;
+               if (!isCardAnim(curAnim)) return;
+               // Make the newAnim value type safe if card becomes unavailable during flashing
+               const newAnim = (curAnim === 'blank' ? _cards[index] : 'blank') ?? 'blank';
+               item.play(newAnim);
+            }, frequency);
          },
          fixedUpdate() {
             if (_p_dash) {
