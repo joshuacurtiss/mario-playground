@@ -5,6 +5,9 @@ import ffmpeg from 'fluent-ffmpeg';
 const sfxInputDir = path.resolve('resources', 'sfx');
 const sfxOutputDir = path.resolve('public', 'assets', 'sfx');
 
+const musicInputDir = path.resolve('resources', 'music');
+const musicOutputDir = path.resolve('public', 'assets', 'music');
+
 function findAudio(dir) {
    const exts = ['.mp3', '.ogg', '.flac', '.m4a', '.wav'];
    const files = [];
@@ -17,17 +20,18 @@ function findAudio(dir) {
    return files;
 }
 
-function convertAudio(files) {
-   fs.mkdirSync(sfxOutputDir, { recursive: true });
+function convertAudio(files, outputDir) {
+   fs.mkdirSync(outputDir, { recursive: true });
    files.forEach(fullPath=>{
       const ext = path.extname(fullPath);
       const name = path.basename(fullPath, ext);
       ffmpeg(fullPath)
          .noVideo()
-         .output(path.resolve(sfxOutputDir, name + '.ogg'))
+         .output(path.resolve(outputDir, name + '.ogg'))
          .run();
    });
 }
 
-convertAudio(findAudio(sfxInputDir));
+convertAudio(findAudio(sfxInputDir), sfxOutputDir);
+convertAudio(findAudio(musicInputDir), musicOutputDir);
 console.log('Audio packing complete.');

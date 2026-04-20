@@ -45,7 +45,7 @@ import home from "./scenes/home";
    k.loadSprite(name, `assets/${name.replace('-', '/')}.png`);
 });
 
-// Audio
+// SFX
 [
    '1up', 'brick-break', 'bump-block', 'checkpoint', 'coin-special', 'coin', 'course-clear',
    'course-clear-fireworks', 'die', 'fireball', 'game-over', 'hit', 'hurt', 'hurry-up',
@@ -53,6 +53,14 @@ import home from "./scenes/home";
    'powerup', 'score-end', 'score', 'spin', 'skid', 'stomp', 'transform',
 ].forEach(name => {
     k.loadSound(name, `assets/sfx/${name}.ogg`);
+});
+
+// Music
+[
+   'ground',
+].forEach(prefix => {
+   k.loadSound(`${prefix}-intro`, `assets/music/${prefix}-intro.ogg`);
+   k.loadSound(`${prefix}-loop`, `assets/music/${prefix}-loop.ogg`);
 });
 
 // Scenes
