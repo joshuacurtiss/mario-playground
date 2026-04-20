@@ -22,6 +22,7 @@ import home from "./scenes/home";
    'terrain-platform-orange',
    'terrain-platform-white',
    'terrain-sand',
+   'text-lives',
 ].forEach(name => {
    k.loadAseprite(name, `assets/sprites/${name}.png`, `assets/sprites/${name}.json`);
 });
