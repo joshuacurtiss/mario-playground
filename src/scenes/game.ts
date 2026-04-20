@@ -78,11 +78,20 @@ export default async function() {
    hud.world = 1;
    hud.time = endTime - k.time();
 
-   // Handle the hurry-up music at 60-second mark
-   const hurryTimer = k.wait(gameTime-60, ()=>{
-      // TODO: Stop music
-      k.play('hurry-up');
-      // TODO: Start music at the hurry pace
+   // Music
+   const music = k.play('ground-loop', { paused: true, loop: true });
+   const intro = k.play('ground-intro', { paused: true });
+   intro.onEnd(() => music.play());
+   k.wait(0.75, () => intro.play());
+   const hurryTimer = k.wait(gameTime-60, async ()=>{
+      if (player.isFrozen) return;
+      music.stop();
+      await k.play('hurry-up');
+      await k.wait(0.25);
+      if (player.isFrozen) return;
+      music.speed = 1.5;
+      music.detune = -400;
+      music.play();
    });
 
    // Player (move camera to spawn point first, in case the spawn is initially off-camera)
@@ -93,6 +102,8 @@ export default async function() {
    player.on('die', () => {
       // Fade to black and go home
       hurryTimer.cancel();
+      intro.stop();
+      music?.stop();
       k.wait(5, () => makeFadeOut({ onDone: () => k.go('home') }));
    });
    player.on('coinsChanged', newCoins=>hud.coins = newCoins);
@@ -104,6 +115,10 @@ export default async function() {
       // When you collide with a 'die' collider, you always die, even if you're invulnerable.
       player.isInvulnerable = false;
       player.die();
+   });
+   player.on('starPowerChanged', (isActive: boolean) => {
+      if (isActive) music?.stop();
+      else if (!player.isFrozen) music?.play();
    });
    player.on('goal', async (goal: Goal) => {
       const goalItem = goal.getCurAnim()?.name;
@@ -122,7 +137,7 @@ export default async function() {
 
       // Turn off existing music/sound
       hurryTimer.cancel();
-      // TODO: Turn off level music
+      music.stop();
 
       /**
        * The async UI process for collecting points for the remaining time.
@@ -187,10 +202,10 @@ export default async function() {
       };
 
       const threeCardMatch = hud.cards[0] === goalItem && hud.cards[1] === goalItem;
-      const music = threeCardMatch ? 'course-clear-fireworks' : 'course-clear';
-      const musicDelay = threeCardMatch ? 0.25 : 2.25;
-      k.play(music);
-      await k.wait(musicDelay, async ()=>{
+      const endMusic = threeCardMatch ? 'course-clear-fireworks' : 'course-clear';
+      const endMusicDelay = threeCardMatch ? 0.25 : 2.25;
+      k.play(endMusic);
+      await k.wait(endMusicDelay, async ()=>{
          hud.addCard(goalItem);
          hud.flashCard(hud.cards.length-1);
          if (threeCardMatch) await runGoalExitWithFireworks();
@@ -237,6 +252,7 @@ export default async function() {
       // Exit level. TODO: This will need to become something more graceful then going 'home'.
       makeFadeOut({ onDone: () => {
          if (hud.cards.length === 3) hud.cards = [];
+         music.stop();
          k.go('home');
       }});
    });
