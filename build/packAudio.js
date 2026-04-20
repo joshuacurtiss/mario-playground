@@ -27,6 +27,8 @@ function convertAudio(files, outputDir) {
       const name = path.basename(fullPath, ext);
       ffmpeg(fullPath)
          .noVideo()
+         .audioCodec('libopus')
+         .format('ogg')
          .output(path.resolve(outputDir, name + '.ogg'))
          .run();
    });
