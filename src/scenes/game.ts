@@ -1,13 +1,11 @@
 import k, { debug, scale } from '../kaplayCtx';
 import { BodyComp, GameObj, PosComp, Vec2 } from 'kaplay';
-import makeMap from '../lib/map';
+import makeMap, { convertPropertiesListToObj } from '../lib/map';
 import { makeFadeIn, makeFadeOut } from '../ui/fader';
 import { makeMario } from '../chars/mario';
-import { makeHUD } from '../ui/hud';
+import { isSingleDigit, makeHUD } from '../ui/hud';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from '../enemies/goomba';
 import { Goal, GoalItem, isGoalItem, makeFireworks } from '../items/goal';
-
-const gameTime=300;
 
 const fullWidth = k.width();
 const fullHeight = k.height();
@@ -18,18 +16,34 @@ function clamp(v: number, min: number, max: number) {
    return Math.min(Math.max(v, min), max);
 }
 
-export default async function() {
-   let endTime = Math.ceil(k.time()) + gameTime;
+interface GameSceneOptions {
+   world: number;
+   level: number;
+}
+
+const gameSceneDefaultOptions: GameSceneOptions = {
+   world: 1,
+   level: 1,
+};
+
+export default async function(options: Partial<GameSceneOptions> = gameSceneDefaultOptions) {
+   const { world, level } = Object.assign({}, gameSceneDefaultOptions, options);
    k.setGravity(3100);
    // Fade in
    makeFadeIn();
    // Load level and map data
-   const mapJson = await fetch('assets/levels/1-1.tmj'),
+   const mapJson = await fetch(`assets/levels/${world}-${level}.tmj`),
          mapData = await mapJson.json(),
          map = makeMap(mapData, k.vec2(0, -432), scale);
 
    map.generateTilesData();
    map.render();
+
+   // Map properties
+   const {
+      music: musicPrefix,
+      time: gameTime,
+   } = convertPropertiesListToObj(map.mapData.properties);
 
    // Calculate ground and camera boundaries based on map data
    const groundObjects = map.mapData.layers.find((l: any) => l.name === 'colliders').objects.filter((o: any) => o.type === 'ground');
@@ -75,15 +89,16 @@ export default async function() {
       k.color(0, 0, 0),
    ]) : null;
    const hud = ui.add(makeHUD());
-   hud.world = 1;
+   hud.world = isSingleDigit(world) ? world : 1;
+   const endTime = Math.ceil(k.time()) + (gameTime ?? 300);
    hud.time = endTime - k.time();
 
    // Music
-   const music = k.play('ground-loop', { paused: true, loop: true });
-   const intro = k.play('ground-intro', { paused: true });
+   const music = k.play(`${musicPrefix ?? 'ground'}-loop`, { paused: true, loop: true });
+   const intro = k.play(`${musicPrefix ?? 'ground'}-intro`, { paused: true });
    intro.onEnd(() => music.play());
    k.wait(0.75, () => intro.play());
-   const hurryTimer = k.wait(gameTime-60, async ()=>{
+   const hurryTimer = k.wait(endTime-Math.ceil(k.time())-60, async ()=>{
       if (player.isFrozen) return;
       music.stop();
       await k.play('hurry-up');

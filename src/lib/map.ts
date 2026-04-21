@@ -125,7 +125,7 @@ interface TiledObject {
  *  - If "item" or "items" was a Tiled array, it converts it to a simple array of values.
  *  - If any item in the "items" array is a comma-separated string, it randomly chooses one of the items.
  */
-function convertPropertiesListToObj(properties?: TiledListProperty[]): Record<string, any> {
+export function convertPropertiesListToObj(properties?: TiledListProperty[]): Record<string, any> {
    const obj: Record<string, any> = {};
    if (!properties) return obj;
    // Convert the list of properties to an object

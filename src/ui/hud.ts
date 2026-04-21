@@ -13,6 +13,10 @@ type DigitObj = GameObj<PosComp | SpriteComp>;
 type SingleDigit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 type PlayerName = 'mario' | 'luigi';
 
+export function isSingleDigit(val: any): val is SingleDigit {
+   return Number.isInteger(val) && val >= 0 && val <= 9;
+}
+
 export function makeHUD() {
    let _world: SingleDigit;
    let _player: PlayerName;
