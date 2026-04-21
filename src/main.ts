@@ -57,7 +57,9 @@ import home from "./scenes/home";
 
 // Music
 [
+   'athletic',
    'ground',
+   'underground',
 ].forEach(prefix => {
    k.loadSound(`${prefix}-intro`, `assets/music/${prefix}-intro.ogg`);
    k.loadSound(`${prefix}-loop`, `assets/music/${prefix}-loop.ogg`);
