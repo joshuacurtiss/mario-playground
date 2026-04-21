@@ -1987,6 +1987,17 @@
  "nextlayerid":21,
  "nextobjectid":158,
  "orientation":"orthogonal",
+ "properties":[
+        {
+         "name":"music",
+         "type":"string",
+         "value":"ground"
+        }, 
+        {
+         "name":"time",
+         "type":"int",
+         "value":180
+        }],
  "renderorder":"right-down",
  "tiledversion":"1.12.1",
  "tileheight":16,
