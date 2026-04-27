@@ -3,6 +3,7 @@ import k from '../kaplayCtx';
 import { isGameObjWithArea, isGameObjWithBody, isGameObjWithOpacity, isGameObjWithPos } from './type-guards';
 import { isChar } from '../chars';
 import { factories as itemFactories, ItemFactory } from '../items';
+import { isPipeOpening, makePipe } from '../items/pipe';
 import { isHeadbuttableWithBump } from '../items/abilities/bump';
 import { factories as enemyFactories, isEnemy } from '../enemies';
 import { isFireball } from '../chars/abilities/fireball';
@@ -165,6 +166,19 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
       scale,
       images: [] as GameObj[],
       spawnCollider(object: TiledObject): void {
+         if (object.type === 'pipe' || object.name === 'pipe') {
+            const { transport = '', opening: openingProp = 'top' } = convertPropertiesListToObj(object.properties);
+            const opening = isPipeOpening(openingProp) ? openingProp : 'top';
+            const pos = this.mapOriginPos.add(object.x, object.y).scale(this.scale);
+            makePipe(pos, {
+               name: object.name === 'pipe' ? `pipe-${object.id}` : object.name,
+               width: object.width,
+               height: object.height,
+               transport,
+               opening,
+            });
+            return;
+         }
          const polygon = object.polygon?.map((point) => k.vec2(point.x, point.y));
          const shape = polygon && polygon.length >= 3 ? new k.Polygon(polygon) : new k.Rect(k.vec2(0), object.width, object.height);
          const collider = k.add([

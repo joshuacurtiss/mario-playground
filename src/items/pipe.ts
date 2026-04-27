@@ -1,53 +1,58 @@
 import k, { scale } from '../kaplayCtx';
 import type { GameObj, Vec2 } from 'kaplay';
 
-// TODO: Eventually, will have SpawnComp, which spawns an item or enemy.
-export type Pipe = GameObj;
-export type PipeType = 'green';
+export const pipeOpenings = [ 'left', 'right', 'top', 'bot' ] as const;
+export type PipeOpening = typeof pipeOpenings[number];
 
-export interface PipeOpt {
-   type: PipeType;
+export function isPipeOpening(val: string): val is PipeOpening {
+   return (pipeOpenings as readonly string[]).includes(val);
+}
+
+interface PipeData {
+   pipeName: string;
+   transport: string;
+   opening: PipeOpening;
+   width: number;
    height: number;
 }
 
+export type Pipe = GameObj<PipeData>;
+
+export interface PipeOpt {
+   name: string;
+   width: number;
+   height: number;
+   transport: string;
+   opening: PipeOpening;
+}
+
 const optionDefaults: PipeOpt = {
-   type: 'green',
-   height: 3,
+   name: '',
+   width: 32,
+   height: 48,
+   transport: '',
+   opening: 'top',
 };
 
 export function makePipe(pos: Vec2, options: Partial<PipeOpt> = {}): Pipe {
-   let { type, height } = Object.assign({}, optionDefaults, options);
-   const obj = k.add([
+   const { name, width, height, transport, opening } = Object.assign({}, optionDefaults, options);
+   return k.add([
       k.pos(pos),
-      k.area({ shape: new k.Rect(k.vec2(0, 0), 32, 16*height) }),
+      k.area({ shape: new k.Rect(k.vec2(0, 0), width, height) }),
       k.body({ isStatic: true }),
       k.scale(scale),
-      k.anchor('bot'),
       'pipe',
-      `pipe-${type}`,
       'immovable',
+      {
+         pipeName: name,
+         transport,
+         opening,
+         width,
+         height,
+      },
    ]);
-   for (let i=0; i<height-1; i++) {
-      obj.add([
-         k.sprite(`terrain-pipe-${type}`, { frame: 2 }),
-         k.anchor('botright'),
-         k.pos(0, -i*16),
-      ]);
-      obj.add([
-         k.sprite(`terrain-pipe-${type}`, { frame: 3 }),
-         k.anchor('botleft'),
-         k.pos(0, -i*16),
-      ]);
-   }
-   obj.add([
-      k.sprite(`terrain-pipe-${type}`, { frame: 0 }),
-      k.anchor('botright'),
-      k.pos(0, -(height-1)*16),
-   ]);
-   obj.add([
-      k.sprite(`terrain-pipe-${type}`, { frame: 1 }),
-      k.anchor('botleft'),
-      k.pos(0, -(height-1)*16),
-   ]);
-   return obj;
+}
+
+export function isPipe(obj?: GameObj): obj is Pipe {
+   return !!obj && obj.is('pipe') && obj.has('body') && obj.has('area');
 }
