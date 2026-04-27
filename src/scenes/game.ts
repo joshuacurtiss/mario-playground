@@ -6,6 +6,7 @@ import { makeMario } from '../chars/mario';
 import { isSingleDigit, makeHUD } from '../ui/hud';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from '../enemies/goomba';
 import { Goal, GoalItem, isGoalItem, makeFireworks } from '../items/goal';
+import { isPipe, Pipe, PipeOpening } from '../items/pipe';
 
 const fullWidth = k.width();
 const fullHeight = k.height();
@@ -14,6 +15,25 @@ const halfHeight = fullHeight/2;
 
 function clamp(v: number, min: number, max: number) {
    return Math.min(Math.max(v, min), max);
+}
+
+function getPipeEnterDir(opening: PipeOpening): Vec2 {
+   if (opening === 'top') return k.vec2(0, 1);
+   if (opening === 'bot') return k.vec2(0, -1);
+   if (opening === 'left') return k.vec2(1, 0);
+   return k.vec2(-1, 0);
+}
+
+function getPipeOpeningPos(pipe: Pipe): Vec2 {
+   if (pipe.opening === 'top') return pipe.pos.add(pipe.width / 2, 0);
+   if (pipe.opening === 'bot') return pipe.pos.add(pipe.width / 2, pipe.height);
+   if (pipe.opening === 'left') return pipe.pos.add(0, pipe.height / 2);
+   return pipe.pos.add(pipe.width, pipe.height / 2);
+}
+
+function getPipeEnterDistance(player: ReturnType<typeof makeMario>, opening: PipeOpening): number {
+   const baseDist = opening === 'left' || opening === 'right' ? player.width + 8 * scale : player.height + 8 * scale;
+   return Math.max(baseDist, 20 * scale);
 }
 
 interface GameSceneOptions {
@@ -114,6 +134,81 @@ export default async function(options: Partial<GameSceneOptions> = gameSceneDefa
    k.setCamPos(calcCamDest(playerSpawnPos));
    await k.wait(0); // Wait a tick to ensure the camera position is set before we spawn the player
    const player = makeMario(playerSpawnPos);
+   let pipeTransitioning = false;
+   let nextPipeUseTime = 0;
+
+   const animatePlayerBy = (dir: Vec2, distance: number, speed: number): Promise<void> => {
+      return new Promise((resolve) => {
+         let moved = 0;
+         const mover = player.onFixedUpdate(() => {
+            const step = Math.min(distance - moved, speed * k.dt());
+            if (step <= 0) {
+               mover.cancel();
+               resolve();
+               return;
+            }
+            player.moveBy(dir.x * step, dir.y * step);
+            moved += step;
+            if (moved >= distance) {
+               mover.cancel();
+               resolve();
+            }
+         });
+      });
+   };
+
+   const canEnterPipe = (pipe: Pipe, col: any): boolean => {
+      if (pipe.opening === 'top') return col.isBottom() && k.isButtonDown('down') && player.isGrounded();
+      if (pipe.opening === 'bot') return col.isTop() && k.isButtonDown('up');
+      if (pipe.opening === 'left') return col.isRight() && k.isButtonDown('right');
+      return col.isLeft() && k.isButtonDown('left');
+   };
+
+   const transportByPipe = async (fromPipe: Pipe) => {
+      if (!fromPipe.transport) return;
+      if (pipeTransitioning) return;
+      pipeTransitioning = true;
+
+      const toPipe = k.get('pipe').find((obj) => isPipe(obj) && obj.pipeName === fromPipe.transport);
+      if (!isPipe(toPipe)) {
+         pipeTransitioning = false;
+         return;
+      }
+
+      player.clearMovement();
+      player.isFrozen = true;
+      if (player.has('offscreen')) player.unuse('offscreen');
+
+      const enterDir = getPipeEnterDir(fromPipe.opening);
+      const enterDist = getPipeEnterDistance(player, fromPipe.opening);
+      const travelSpeed = 90 * scale;
+      await animatePlayerBy(enterDir, enterDist, travelSpeed);
+
+      const arriveInsideDist = getPipeEnterDistance(player, toPipe.opening);
+      const toEnterDir = getPipeEnterDir(toPipe.opening);
+      const toOpeningPos = getPipeOpeningPos(toPipe);
+      player.moveTo(toOpeningPos.add(toEnterDir.scale(arriveInsideDist)));
+      k.setCamPos(calcCamDest(player.pos, player.height));
+      await k.wait(0);
+
+      const exitDir = toEnterDir.scale(-1);
+      await animatePlayerBy(exitDir, arriveInsideDist, travelSpeed);
+
+      nextPipeUseTime = k.time() + 0.3;
+      player.isFrozen = false;
+      if (!player.has('offscreen')) player.use(k.offscreen({ distance: 50 * scale }));
+      pipeTransitioning = false;
+   };
+
+   player.onCollideUpdate('pipe', (obj, col) => {
+      if (!isPipe(obj)) return;
+      if (!obj.transport.length) return;
+      if (player.isFrozen || pipeTransitioning) return;
+      if (k.time() < nextPipeUseTime) return;
+      if (!canEnterPipe(obj, col)) return;
+      transportByPipe(obj);
+   });
+
    player.on('die', () => {
       // Fade to black and go home
       hurryTimer.cancel();
