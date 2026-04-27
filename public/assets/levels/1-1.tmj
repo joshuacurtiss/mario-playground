@@ -1765,10 +1765,16 @@
                 {
                  "height":48,
                  "id":6,
-                 "name":"",
+                 "name":"x",
                  "opacity":1,
+                 "properties":[
+                        {
+                         "name":"transport",
+                         "type":"string",
+                         "value":"y"
+                        }],
                  "rotation":0,
-                 "type":"",
+                 "type":"pipe",
                  "visible":true,
                  "width":30,
                  "x":81,
@@ -1777,10 +1783,16 @@
                 {
                  "height":144,
                  "id":11,
-                 "name":"",
+                 "name":"y",
                  "opacity":1,
+                 "properties":[
+                        {
+                         "name":"transport",
+                         "type":"string",
+                         "value":"x"
+                        }],
                  "rotation":0,
-                 "type":"",
+                 "type":"pipe",
                  "visible":true,
                  "width":30,
                  "x":929,
