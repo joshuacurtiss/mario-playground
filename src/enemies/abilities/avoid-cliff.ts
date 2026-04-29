@@ -68,8 +68,8 @@ export function avoidCliff(options: Partial<AvoidCliffCompOpt> = {}): AvoidCliff
          const hitMargin = k.raycast(k.vec2(xEdge-margin*scale*this.dir, bottomY-rayOffsetY*scale), k.vec2(0, rayDepth*scale));
          // If both rays miss, or if they hit but not the ground, turn around.
          if ((!hitMargin && !hitEdge) || (!isGround(hitMargin?.object, groundTag) && !isGround(hitEdge?.object, groundTag))) {
+            this.dir *= -1;
             this.flipX = !this.flipX;
-            this.dir = this.flipX ? -1 : 1;
          }
       }
    };
