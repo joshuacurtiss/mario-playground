@@ -20,6 +20,7 @@ imagelayer
 IMAGELAYER
 imagewidth
 kaplay
+koopa
 lakitu
 lerp
 motobug
