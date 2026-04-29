@@ -22,6 +22,7 @@ imagelayer
 IMAGELAYER
 imagewidth
 kaplay
+koopa
 lakitu
 lerp
 lkdn
