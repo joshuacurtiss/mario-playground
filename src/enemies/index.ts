@@ -6,6 +6,7 @@ import { MoveComp } from './abilities/move';
 import { PatrolComp } from "./abilities/patrol";
 import { PointsComp } from '../shared-abilities/points';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from "./goomba";
+import { KOOPA_ENEMY_TAG, makeKoopa } from "./koopa";
 
 export const ENEMY_TYPES = [ GOOMBA_ENEMY_TAG ] as const;
 export type EnemyType = typeof ENEMY_TYPES[number];
@@ -48,6 +49,8 @@ export function isEnemy(obj: GameObj): obj is Enemy {
 
 export const factories = {
    [GOOMBA_ENEMY_TAG]: makeGoomba,
+   [KOOPA_ENEMY_TAG]: makeKoopa,
 }
 
 export { makeGoomba, isGoomba } from './goomba';
+export { makeKoopa, isKoopa } from './koopa';
