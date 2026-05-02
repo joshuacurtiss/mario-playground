@@ -9,6 +9,14 @@ import { points } from '../shared-abilities/points';
 import { freeze } from '../shared-abilities/freeze';
 
 export const KOOPA_ENEMY_TAG = 'koopa';
+
+export const KOOPA_STATE = {
+   DEAD: 0,
+   SHELL: 1,
+   WALK: 2,
+   FLY: 3,
+} as const;
+export type KoopaState = typeof KOOPA_STATE[keyof typeof KOOPA_STATE];
 export type Koopa = GameObj<EnemyComps & KoopaComp>;
 export const KOOPA_TYPES = ['brn', 'red'] as const;
 export type KoopaType = typeof KOOPA_TYPES[number];
@@ -23,17 +31,42 @@ export function isKoopa(obj: GameObj): obj is Koopa {
 export interface KoopaComp extends EnemyComp {
    get type(): KoopaType;
    set type(val: KoopaType);
+   get state(): KoopaState;
+   set state(val: KoopaState);
+   setState(newState: KoopaState): void;
    getSprite(): string;
    setSprite(newSprite: string): void;
    getType(): KoopaType;
 }
 
 function koopa(): KoopaComp {
+   let _state: KoopaState = KOOPA_STATE.WALK;
    return {
       id: KOOPA_ENEMY_TAG,
       add(this: Koopa) {
          this.onHeadbutted(this.die);
          this.onCollide('die', () => this.destroy());
+      },
+      get state(): KoopaState {
+         return _state;
+      },
+      set state(val: KoopaState) {
+         this.setState(val);
+      },
+      setState(this: Koopa, newState: KoopaState) {
+         this.state = newState;
+         if (newState === KOOPA_STATE.FLY) {
+            this.play(`${KOOPA_ENEMY_TAG}-${this.type}-fly`);
+         } else if (newState === KOOPA_STATE.WALK) {
+            this.play(`${KOOPA_ENEMY_TAG}-${this.type}`);
+         } else if (newState === KOOPA_STATE.SHELL) {
+            this.play(`${KOOPA_ENEMY_TAG}-${this.type}-spin`);
+            this.stop();
+         } else if (newState === KOOPA_STATE.DEAD) {
+            this.setSprite(`${KOOPA_ENEMY_TAG}-${this.type}-spin`);
+            this.stop();
+            this.flipY = true;
+         }
       },
       get type(): KoopaType {
          return this.getType();
@@ -55,18 +88,27 @@ function koopa(): KoopaComp {
          const { flipX, frame } = this;
          this.use(k.sprite(newSprite, { frame, flipX }));
       },
-      die(this: Enemy, player: GameObj) {
+      die(this: Koopa, player: GameObj) {
+         this.state = KOOPA_STATE.DEAD;
          if (player) player.trigger('collect', this);
          this.isFrozen = true;
          this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
          this.vel = k.vec2(0, -200*scale);
-         this.flipY = true;
          this.stop();
          k.play('hit');
          this.trigger('die');
          k.wait(3, () => this.destroy());
       },
       squash(this: Koopa, player: GameObj) {
+         if (this.state === KOOPA_STATE.FLY) {
+
+         } else if (this.state === KOOPA_STATE.WALK) {
+
+         } else if (this.state === KOOPA_STATE.SHELL) {
+
+         }
+         return;
+         this.state = KOOPA_STATE.SHELL;
          if (player) player.trigger('collect', this);
          this.play(`${KOOPA_ENEMY_TAG}-${this.type}-die`);
          k.play('stomp');
