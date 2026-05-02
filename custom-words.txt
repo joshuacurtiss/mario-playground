@@ -1,5 +1,6 @@
 anims
 Aseprite
+bbox
 botleft
 botright
 brickbreak
@@ -15,6 +16,7 @@ goombared
 goombas
 hammerbro
 Headbuttable
+Headbuttables
 imageheight
 imagelayer
 IMAGELAYER
@@ -22,6 +24,8 @@ imagewidth
 kaplay
 lakitu
 lerp
+lkdn
+lkup
 motobug
 notered
 objectgroup
@@ -30,6 +34,7 @@ offsetx
 offsety
 parallaxx
 parallaxy
+pirf
 pjump
 powerup
 powerups
@@ -39,6 +44,8 @@ repeatx
 repeaty
 RGBA
 spacebar
+spdn
+spup
 steamapps
 swimidle
 tanooki
