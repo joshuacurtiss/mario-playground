@@ -22,6 +22,8 @@ imagewidth
 kaplay
 lakitu
 lerp
+lkdn
+lkup
 motobug
 notered
 objectgroup
@@ -30,6 +32,7 @@ offsetx
 offsety
 parallaxx
 parallaxy
+pirf
 pjump
 powerup
 powerups
@@ -39,6 +42,8 @@ repeatx
 repeaty
 RGBA
 spacebar
+spdn
+spup
 steamapps
 swimidle
 tanooki
