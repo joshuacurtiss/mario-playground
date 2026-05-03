@@ -1,15 +1,15 @@
 import k, { scale } from "../kaplayCtx";
 import { GameObj, Vec2 } from 'kaplay';
 import { Enemy, EnemyComp, EnemyComps, isEnemy } from './index';
-import { avoidCliff, AvoidCliffCompOpt } from './abilities/avoid-cliff';
+import { avoidCliff, AvoidCliffComp, AvoidCliffCompOpt } from './abilities/avoid-cliff';
 import { collect } from "./abilities/collect";
-import { move, MoveCompOpt } from "./abilities/move";
-import { patrol, PatrolCompOpt } from "./abilities/patrol";
+import { move, MoveComp, MoveCompOpt } from "./abilities/move";
+import { patrol, PatrolComp, PatrolCompOpt } from "./abilities/patrol";
 import { points } from '../shared-abilities/points';
 import { freeze } from '../shared-abilities/freeze';
 
 export const GOOMBA_ENEMY_TAG = 'goomba';
-export type Goomba = GameObj<EnemyComps & GoombaComp>;
+export type Goomba = GameObj<EnemyComps & GoombaComp & AvoidCliffComp & MoveComp & PatrolComp>;
 export const GOOMBA_TYPES = ['brn', 'red'] as const;
 export type GoombaType = typeof GOOMBA_TYPES[number];
 
