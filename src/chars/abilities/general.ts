@@ -264,6 +264,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
       },
       handleCollideEnemy(this: Char, enemy, _col) {
          if (this.isFrozen || enemy.isFrozen) return;
+         const enemyIsPiranha = enemy.is('pir') || enemy.is('pirf');
          const enemyRect = enemy.area.shape && isRect(enemy.area.shape) ? enemy.area.shape : new k.Rect(k.vec2(0),0,0);
          const charPos = this.worldPos();
          const enemyPos = enemy.worldPos();
@@ -274,7 +275,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          // But star power comes first. Enemy just dies with no bounce if star power.
          if (this.hasStarPower) {
             enemy.die(this);
-         } else if ((charPos.y <= thresholdY) && this.vel.y > 0) {
+         } else if (!enemyIsPiranha && charPos.y <= thresholdY && this.vel.y > 0) {
             jumpCombo = jumpCombo ? jumpCombo * 2 : 1;
             enemy.points *= jumpCombo;
             if (enemy.isOneUp) this.oneUp();
