@@ -3,8 +3,9 @@ import { CollectComp } from "./abilities/collect";
 import { FreezeComp } from '../shared-abilities/freeze';
 import { PointsComp } from '../shared-abilities/points';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from "./goomba";
+import { makePiranha, makePiranhaWithFireball, PIRANHA_ENEMY_TAG, PIRANHA_FIRE_ENEMY_TAG, PIRANHA_KINDS } from './piranha';
 
-export const ENEMY_TYPES = [ GOOMBA_ENEMY_TAG ] as const;
+export const ENEMY_TYPES = [ GOOMBA_ENEMY_TAG, ...PIRANHA_KINDS ] as const;
 export type EnemyType = typeof ENEMY_TYPES[number];
 
 export function isEnemyType(value: unknown): value is EnemyType {
@@ -42,6 +43,9 @@ export function isEnemy(obj: GameObj): obj is Enemy {
 
 export const factories = {
    [GOOMBA_ENEMY_TAG]: makeGoomba,
+   [PIRANHA_ENEMY_TAG]: makePiranha,
+   [PIRANHA_FIRE_ENEMY_TAG]: makePiranhaWithFireball,
 }
 
 export { makeGoomba, isGoomba } from './goomba';
+export { makePiranha, makePiranhaWithFireball, isPiranha } from './piranha';
