@@ -1,9 +1,6 @@
 import { AnchorComp, AreaComp, BodyComp, Comp, GameObj, OffScreenComp, PosComp, ScaleComp, SpriteComp, Vec2, ZComp } from "kaplay";
 import { CollectComp } from "./abilities/collect";
 import { FreezeComp } from '../shared-abilities/freeze';
-import { AvoidCliffComp } from './abilities/avoid-cliff';
-import { MoveComp } from './abilities/move';
-import { PatrolComp } from "./abilities/patrol";
 import { PointsComp } from '../shared-abilities/points';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from "./goomba";
 
@@ -31,19 +28,16 @@ export type EnemyComps =
    SpriteComp &
    ZComp &
    // Custom
-   AvoidCliffComp &
    CollectComp &
    EnemyComp &
    FreezeComp &
-   MoveComp &
-   PatrolComp &
    PointsComp;
 
 export type Enemy = GameObj<EnemyComps>;
 export type EnemyFactory = (pos: Vec2, options?: Record<string, any>) => Enemy;
 
 export function isEnemy(obj: GameObj): obj is Enemy {
-   return obj.has(['sprite', 'area', 'pos', 'collect', 'freeze', 'move', 'patrol', 'points', 'z']) && obj.is('enemy');
+   return obj.has(['sprite', 'area', 'body', 'pos', 'collect', 'freeze', 'points', 'z']) && obj.is('enemy');
 }
 
 export const factories = {
