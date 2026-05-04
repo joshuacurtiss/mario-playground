@@ -265,7 +265,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          if (this.isFrozen || enemy.isFrozen) return;
          const charRect = this.area.shape && isRect(this.area.shape) ? this.area.shape : new k.Rect(k.vec2(0),0,0);
          const enemyRect = enemy.area.shape && isRect(enemy.area.shape) ? enemy.area.shape : new k.Rect(k.vec2(0),0,0);
-         // Must hit top part of enemy  with downward velocity to squash
+         // Must hit top part of enemy  with downward velocity to stomp
          const thresholdY = enemy.pos.y - enemyRect.pos.y - enemyRect.height / 2;
          // But star power comes first. Enemy just dies with no bounce if star power.
          if (this.hasStarPower) {
@@ -274,8 +274,8 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
             jumpCombo = jumpCombo ? jumpCombo * 2 : 1;
             enemy.points *= jumpCombo;
             if (enemy.isOneUp) this.oneUp();
-            enemy.squash(this);
-            // We wait a tick to bounce in case we squash multiple enemies in one frame
+            enemy.stomp(this);
+            // We wait a tick to bounce in case we stomp multiple enemies in one frame
             k.wait(0, ()=>{
                if (this.isJumping()) return;
                this.variableJump(jumpForces[this.size]*1.1);

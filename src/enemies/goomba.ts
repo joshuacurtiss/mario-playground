@@ -66,7 +66,7 @@ function goomba(): GoombaComp {
          this.trigger('die');
          k.wait(3, () => this.destroy());
       },
-      squash(this: Goomba, player: GameObj) {
+      stomp(this: Goomba, player: GameObj) {
          if (player) player.trigger('collect', this);
          this.play(`${GOOMBA_ENEMY_TAG}-${this.type}-die`);
          k.play('stomp');
