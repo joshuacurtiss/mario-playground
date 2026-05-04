@@ -28,6 +28,7 @@ export function freeze(): FreezeComp {
          const anim = this.curAnim();
          const shape = this.area.shape?.clone();
          const vel = this.vel.clone();
+         const isStaticOrig = this.isStatic;
          this.isStatic = true;
          this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
          this.vel = k.vec2(0, 0);
@@ -35,7 +36,7 @@ export function freeze(): FreezeComp {
          frozen = true;
          if (!duration) return;
          k.wait(duration, () => {
-            this.isStatic = false;
+            this.isStatic = isStaticOrig;
             if (shape) this.area.shape = shape;
             this.vel = vel;
             if (anim) this.play(anim);
