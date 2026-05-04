@@ -1,6 +1,6 @@
 import { Collision, GameObj, Vec2 } from 'kaplay';
 import k from '../kaplayCtx';
-import { isGameObjWithArea, isGameObjWithBody, isGameObjWithOpacity, isGameObjWithPos } from './type-guards';
+import { isGameObjWithOpacity } from './type-guards';
 import { isChar } from '../chars';
 import { factories as itemFactories, ItemFactory } from '../items';
 import { isHeadbuttableWithBump } from '../items/abilities/bump';
@@ -13,6 +13,10 @@ import { isPowerup } from '../items/powerup';
 const ITEMS_LAYER_NAME = 'items';
 const ENEMIES_LAYER_NAME = 'enemies';
 const SPAWN_LAYER_NAME = 'spawn';
+
+const FLIPPED_HORIZONTALLY_FLAG = 0x80000000;
+const FLIPPED_VERTICALLY_FLAG = 0x40000000;
+const FLIPPED_DIAGONALLY_FLAG = 0x20000000;
 
 export const LAYER_TYPE = {
    TILELAYER: 'tilelayer',
@@ -282,16 +286,25 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
          for (const layer of this.mapData.layers) {
             if (layer.type === LAYER_TYPE.TILELAYER) {
                const currentTilePos = k.vec2(this.mapOriginPos);
-               // Loop over all TILES (gid) in layer
-               for (const gid of layer.data) {
+               // Loop over all TILES (globalTileId) in layer
+               for (const globalTileId of layer.data) {
                   if (currentTilePos.x === this.mapOriginPos.x + layer.width * this.tileSize) {
                      currentTilePos.x = this.mapOriginPos.x;
                      currentTilePos.y += this.tileSize;
                   }
-                  if (gid === 0) {
+                  if (globalTileId === 0) {
                      currentTilePos.x += this.tileSize;
                      continue;
                   }
+
+                  // Read flags and clear them to get the actual GID
+                  // Ref: https://doc.mapeditor.org/en/stable/reference/global-tile-ids/
+                  const flipX = (globalTileId & FLIPPED_HORIZONTALLY_FLAG) !== 0;
+                  const flipY = (globalTileId & FLIPPED_VERTICALLY_FLAG) !== 0;
+                  const flippedDiagonally = (globalTileId & FLIPPED_DIAGONALLY_FLAG) !== 0;
+                  const flagsMask = ~(FLIPPED_HORIZONTALLY_FLAG | FLIPPED_VERTICALLY_FLAG | FLIPPED_DIAGONALLY_FLAG);
+                  const gid = globalTileId & flagsMask;
+
                   let tileset: TilesetLookup | undefined;
                   for (let i = tilesets.length - 1; i >= 0; i--) {
                      if (tilesets[i].firstgid <= gid) {
@@ -305,13 +318,18 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
                   }
 
                   const frame = gid - tileset.firstgid;
-                  const tilePos = k.vec2(currentTilePos.add(layer.offsetx ?? 0, layer.offsety ?? 0)).scale(this.scale);
+                  const angle = flippedDiagonally ? (flipX !== flipY ? 270 : 90) : 0;
+                  const angleDelta = angle===90 ? k.vec2(16, 0) : angle===270 ? k.vec2(0, 16) : k.vec2(0);
+                  const tilePos = k.vec2(currentTilePos.add(layer.offsetx ?? 0, layer.offsety ?? 0).add(angleDelta)).scale(this.scale);
 
                   const tileData = {
                      sprite: tileset.sprite,
                      scale: this.scale,
                      pos: tilePos,
                      frame,
+                     angle,
+                     flipX,
+                     flipY,
                   };
                   this.tilesData.push(tileData);
                   currentTilePos.x += this.tileSize;
