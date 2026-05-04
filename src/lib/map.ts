@@ -274,9 +274,10 @@ export default function makeMap(mapData: any, position: Vec2, scale: number) {
          const parts = tag.split('-');
          const char = kindProp ?? parts[0];
          const type = typeProp ?? parts[1];
+         const rotation = object.rotation ?? 0;
          if (char in enemyFactories) {
             const fac = enemyFactories[char as keyof typeof enemyFactories];
-            fac(pos, { ...options, type });
+            fac(pos, { ...options, type, rotation });
          }
       },
       generateTilesData() {
