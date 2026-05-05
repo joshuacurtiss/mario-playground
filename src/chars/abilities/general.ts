@@ -233,6 +233,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
       },
       hurt(this: Char) {
          if (this.isInvulnerable) return;
+         if (this.hasStarPower) return;
          this.trigger('hurt');
          if (this.size==='sm') {
             this.die();
