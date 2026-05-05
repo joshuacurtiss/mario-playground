@@ -40,8 +40,8 @@ export type CharComps =
 
 export type Char = GameObj<CharComps>;
 
-export function isChar(obj: GameObj): obj is Char {
-   return obj.has(['coins', 'fireball', 'flash', 'freeze', 'general', 'lives', 'mushroom', 'raccoon']) && obj.is('player');
+export function isChar(obj?: GameObj): obj is Char {
+   return !!obj && obj.has(['coins', 'fireball', 'flash', 'freeze', 'general', 'lives', 'mushroom', 'raccoon']) && obj.is('player');
 }
 
 export { makeMario } from './mario';
