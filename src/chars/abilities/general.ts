@@ -263,14 +263,17 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
       },
       handleCollideEnemy(this: Char, enemy, _col) {
          if (this.isFrozen || enemy.isFrozen) return;
-         const charRect = this.area.shape && isRect(this.area.shape) ? this.area.shape : new k.Rect(k.vec2(0),0,0);
          const enemyRect = enemy.area.shape && isRect(enemy.area.shape) ? enemy.area.shape : new k.Rect(k.vec2(0),0,0);
+         const charPos = this.worldPos();
+         const enemyPos = enemy.worldPos();
+         // Validate positions exist
+         if (!charPos || !enemyPos) return;
          // Must hit top part of enemy  with downward velocity to stomp
-         const thresholdY = enemy.pos.y - enemyRect.pos.y - enemyRect.height / 2;
+         const thresholdY = enemyPos.y - enemyRect.pos.y - enemyRect.height / 2;
          // But star power comes first. Enemy just dies with no bounce if star power.
          if (this.hasStarPower) {
             enemy.die(this);
-         } else if ((this.pos.y <= thresholdY) && this.vel.y > 0) {
+         } else if ((charPos.y <= thresholdY) && this.vel.y > 0) {
             jumpCombo = jumpCombo ? jumpCombo * 2 : 1;
             enemy.points *= jumpCombo;
             if (enemy.isOneUp) this.oneUp();
@@ -280,12 +283,12 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
                if (this.isJumping()) return;
                this.variableJump(jumpForces[this.size]*1.1);
             });
-         } else if (this.curAnim()?.startsWith('swipe') && enemy.pos.y > this.pos.y - charRect.height/2) {
+         } else if (this.curAnim()?.startsWith('swipe')) {
             k.add([
                k.sprite('items', { anim: 'strike', animSpeed: 2 }),
                k.scale(this.scale),
                k.anchor('center'),
-               k.pos(this.pos.x + 15*this.scale.x*(enemy.pos.x<this.pos.x ? -1 : 1), this.pos.y - 7*this.scale.y),
+               k.pos(charPos.x + 15*this.scale.x*(enemyPos.x<charPos.x ? -1 : 1), charPos.y - 7*this.scale.y),
                k.opacity(1),
                k.lifespan(0.25),
             ])
