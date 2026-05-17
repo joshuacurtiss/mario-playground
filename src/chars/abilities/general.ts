@@ -40,7 +40,6 @@ export interface GeneralCompOpt {
    },
    areas: {
       duck: Rect;
-      swipe: Rect;
       sm: Rect;
       lg: Rect;
    },
@@ -63,7 +62,6 @@ const optionDefaults: GeneralCompOpt = {
    },
    areas: {
       duck: new k.Rect(k.vec2(0), 8, 15),
-      swipe: new k.Rect(k.vec2(0), 24, 27),
       sm: new k.Rect(k.vec2(0), 8, 15),
       lg: new k.Rect(k.vec2(0), 10, 27),
    },
@@ -189,7 +187,6 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          let rect = areas.lg;
          const anim = this.curAnim() ?? '';
          if (anim.startsWith('duck')) rect = areas.duck;
-         else if (anim.startsWith('swipe')) rect = areas.swipe;
          else if (this.size === 'sm') rect = areas.sm;
          if (
             !this.area.shape ||
@@ -285,16 +282,6 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
                if (this.isJumping()) return;
                this.variableJump(jumpForces[this.size]*1.1);
             });
-         } else if (this.curAnim()?.startsWith('swipe')) {
-            k.add([
-               k.sprite('items', { anim: 'strike', animSpeed: 2 }),
-               k.scale(this.scale),
-               k.anchor('center'),
-               k.pos(charPos.x + 15*this.scale.x*(enemyPos.x<charPos.x ? -1 : 1), charPos.y - 7*this.scale.y),
-               k.opacity(1),
-               k.lifespan(0.25),
-            ])
-            enemy.die(this);
          } else if (!this.isInvulnerable) {
             enemy.freeze(0.7);
             this.hurt();
