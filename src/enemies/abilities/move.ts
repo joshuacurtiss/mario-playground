@@ -2,7 +2,7 @@ import { Comp, GameObj, MergeComps } from "kaplay";
 import { scale } from "../../kaplayCtx";
 import { EnemyComps } from '../index';
 
-type Dir = 1 | -1;
+export type Dir = 1 | 0 | -1;
 
 export interface MoveComp extends Comp {
    get dir(): Dir;
