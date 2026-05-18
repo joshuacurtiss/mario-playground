@@ -1,7 +1,8 @@
 import k, { scale } from "../../kaplayCtx";
 import { Comp, GameObj, Vec2 } from 'kaplay';
-import { Enemy } from '../index';
+import { EnemyComps } from '../index';
 import { isGameObjWithOpacity } from "../../lib/type-guards";
+import { MoveComp } from "./move";
 
 export interface AvoidCliffComp extends Comp {
    get groundTag(): string | string[];
@@ -43,7 +44,7 @@ export function avoidCliff(options: Partial<AvoidCliffCompOpt> = {}): AvoidCliff
    let { enabled, margin, rayOffsetY, rayDepth, groundTag } = Object.assign({}, optionDefaults, options);
    return {
       id: 'avoid-cliff',
-      require: [ 'area', 'body', 'sprite', 'move' ],
+      require: [ 'area', 'body', 'move' ],
       get groundTag() { return groundTag; },
       set groundTag(val: string | string[]) { groundTag = val; },
       get margin() { return margin; },
@@ -54,7 +55,7 @@ export function avoidCliff(options: Partial<AvoidCliffCompOpt> = {}): AvoidCliff
       set rayDepth(val: number) { rayDepth = val; },
       get enabled() { return enabled; },
       set enabled(val: boolean) { enabled = val; },
-      fixedUpdate(this: Enemy) {
+      fixedUpdate(this: GameObj<EnemyComps & AvoidCliffComp & MoveComp>) {
          if (!enabled) return;
          if (this.isFrozen) return;
          const area = this.worldArea();

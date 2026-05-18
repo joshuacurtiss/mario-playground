@@ -1,6 +1,7 @@
 import k from "../../kaplayCtx";
-import { Enemy } from '../index'
-import { Comp, Vec2 } from 'kaplay';
+import { EnemyComps } from '../index'
+import { Comp, GameObj, Vec2 } from 'kaplay';
+import { MoveComp } from "./move";
 
 interface Boundary {
    left: number;
@@ -32,11 +33,11 @@ export function patrol(options: PatrolCompOpt = {}): PatrolComp {
    if (boundary && boundary.left < 0) boundary.left = 0;
    return {
       id: 'patrol',
-      require: [ 'pos', 'freeze' ],
+      require: [ 'pos', 'freeze', 'move' ],
       get isPatrolling() {
          return !!boundary;
       },
-      fixedUpdate(this: Enemy) {
+      fixedUpdate(this: GameObj<EnemyComps & PatrolComp & MoveComp>) {
          if (this.isFrozen) return;
          if (!this.isGrounded()) return;
          if (!this.pos) return;

@@ -1,6 +1,6 @@
-import { Comp } from "kaplay";
+import { Comp, GameObj, MergeComps } from "kaplay";
 import { scale } from "../../kaplayCtx";
-import { Enemy } from '../index';
+import { EnemyComps } from '../index';
 
 type Dir = 1 | -1;
 
@@ -31,11 +31,11 @@ export function move(options: Partial<MoveCompOpt> = {}): MoveComp {
       set dir(val) { _dir = val; },
       get speed() { return _speed ?? 0; },
       set speed(val) { _speed = val; },
-      fixedUpdate(this: Enemy) {
+      fixedUpdate(this: GameObj<EnemyComps & MoveComp>) {
          if (this.isFrozen) return;
          this.move(this.speed * this.dir, 0);
       },
-      add(this: Enemy) {
+      add(this: GameObj<EnemyComps & MoveComp>) {
          this.onBeforePhysicsResolve(col=>{
             if (this.isFrozen) return;
             // Ignore collision with other enemies when they fall on top of each other.
