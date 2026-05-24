@@ -67,7 +67,10 @@ function goomba(): GoombaComp {
          k.play('stomp');
          this.trigger('die');
          this.freeze(0.5, { onDone: ()=>this.destroy() });
-      }
+      },
+      isStomped(this: Goomba) {
+         return this.getCurAnim()?.name.endsWith('-die') ?? false;
+      },
    };
 }
 

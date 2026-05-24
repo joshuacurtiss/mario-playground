@@ -141,8 +141,11 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
          this.trigger('die');
          this.destroy();
       },
-      stomp(this: Piranha, player: GameObj) {
+      stomp(_player: GameObj) {
          k.debug.log('You can\'t stomp a piranha!');
+      },
+      isStomped() {
+         return false;
       },
       calcWorldPos(this: Piranha, heightPct=0.85): Vec2 | undefined {
          return this.worldPos()?.add(

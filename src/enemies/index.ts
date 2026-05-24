@@ -17,6 +17,7 @@ export function isEnemyType(value: unknown): value is EnemyType {
 export interface EnemyComp extends Comp {
    die(player: GameObj): void;
    stomp(player: GameObj): void;
+   isStomped(this: Enemy): boolean;
 }
 
 export type EnemyComps =
