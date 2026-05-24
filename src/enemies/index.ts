@@ -1,5 +1,6 @@
 import { AnchorComp, AreaComp, BodyComp, Comp, GameObj, OffScreenComp, PosComp, ScaleComp, SpriteComp, Vec2, ZComp } from "kaplay";
 import { CollectComp } from "./abilities/collect";
+import { GeneralComp } from './abilities/general';
 import { FreezeComp } from '../shared-abilities/freeze';
 import { PointsComp } from '../shared-abilities/points';
 import { GOOMBA_ENEMY_TAG, makeGoomba } from "./goomba";
@@ -29,6 +30,7 @@ export type EnemyComps =
    SpriteComp &
    ZComp &
    // Custom
+   GeneralComp &
    CollectComp &
    EnemyComp &
    FreezeComp &

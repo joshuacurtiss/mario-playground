@@ -7,6 +7,7 @@ import { freeze } from '../shared-abilities/freeze';
 import { isChar } from '../chars';
 import { isGameObjWithRect } from "../lib/type-guards";
 import { intersectRects, getRectWorldBounds } from "../lib/shape";
+import { general } from "./abilities/general";
 
 export type Piranha = GameObj<EnemyComps & PiranhaComp>;
 export const PIRANHA_ENEMY_TAG = 'pir';
@@ -37,12 +38,12 @@ export interface PiranhaComp extends EnemyComp {
    set type(val: PiranhaType);
    get action(): PiranhaAction;
    set action(val: PiranhaAction);
-   getSprite(): string;
-   setSprite(newSprite: string): void;
-   setAnim(anim: string): void;
    getKind(): PiranhaKind;
+   setKind(val: PiranhaKind): void;
    getType(): PiranhaType;
+   setType(val: PiranhaType): void;
    getAction(): PiranhaAction;
+   setAction(val: PiranhaAction): void;
    calcWorldPos(heightPct?: number): Vec2 | undefined;
    getVisibleRect(): Rect | undefined;
 }
@@ -79,49 +80,46 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
          return this.getKind();
       },
       set kind(val: PiranhaKind) {
-         const k = isPiranhaKind(val) ? val : PIRANHA_KINDS[0];
-         this.setAnim(calcPiranhaAnim(k, this.type, this.action));
+         this.setKind(val);
       },
       getKind(this: Piranha): PiranhaKind {
          const k = this.getCurAnim()?.name.split('-')[0] ?? PIRANHA_KINDS[0];
          if (isPiranhaKind(k)) return k;
          throw new Error(`Invalid piranha kind: ${k}`);
       },
+      setKind(this: Piranha, val: PiranhaKind) {
+         const k = isPiranhaKind(val) ? val : PIRANHA_KINDS[0];
+         this.setAnim(calcPiranhaAnim(k, this.type, this.action));
+      },
       get type(): PiranhaType {
          return this.getType();
       },
       set type(val: PiranhaType) {
-         const t = isPiranhaType(val) ? val : PIRANHA_TYPES[0];
-         this.setAnim(calcPiranhaAnim(this.kind, t, this.action));
+         this.setType(val);
       },
       getType(this: Piranha): PiranhaType {
          const t = this.getCurAnim()?.name.split('-')[1] ?? PIRANHA_TYPES[0];
          if (isPiranhaType(t)) return t;
          throw new Error(`Invalid piranha type: ${t}`);
       },
+      setType(this: Piranha, val: PiranhaType) {
+         const t = isPiranhaType(val) ? val : PIRANHA_TYPES[0];
+         this.setAnim(calcPiranhaAnim(this.kind, t, this.action));
+      },
       get action(): PiranhaAction {
          return this.getAction();
       },
       set action(val: PiranhaAction) {
-         const a = isPiranhaAction(val) ? val : '';
-         this.setAnim(calcPiranhaAnim(this.kind, this.type, a));
+         this.setAction(val);
       },
       getAction(this: Piranha): PiranhaAction {
          const action = this.getCurAnim()?.name.split('-')[2] ?? '';
          if (isPiranhaAction(action)) return action;
          throw new Error(`Invalid piranha action: ${action}`);
       },
-      getSprite(this: Enemy): string {
-         return this.sprite;
-      },
-      setSprite(this: Piranha, newSprite: string) {
-         if (this.sprite === newSprite) return;
-         const { flipX, frame } = this;
-         this.use(k.sprite(newSprite, { frame, flipX }));
-      },
-      setAnim(this: Piranha, anim: string) {
-         if (this.getCurAnim()?.name === anim) return;
-         this.play(anim);
+      setAction(this: Piranha, val: PiranhaAction) {
+         const a = isPiranhaAction(val) ? val : '';
+         this.setAnim(calcPiranhaAnim(this.kind, this.type, a));
       },
       die(this: Piranha, player: GameObj) {
          if (player) player.trigger('collect', this);
@@ -312,6 +310,7 @@ export function makePiranha(pos: Vec2, options: Partial<PiranhaOpt> = {}): Piran
       k.pos(0, 0),
       k.z(1),
       k.offscreen({ distance: 40*scale, pause: true, unpause: true }),
+      general(),
       collect(),
       points(opts.points),
       freeze(),

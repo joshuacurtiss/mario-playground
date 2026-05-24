@@ -7,6 +7,7 @@ import { move, MoveComp, MoveCompOpt } from "./abilities/move";
 import { patrol, PatrolComp, PatrolCompOpt } from "./abilities/patrol";
 import { points } from '../shared-abilities/points';
 import { freeze } from '../shared-abilities/freeze';
+import { general } from "./abilities/general";
 
 export const GOOMBA_ENEMY_TAG = 'goomba';
 export type Goomba = GameObj<EnemyComps & GoombaComp & AvoidCliffComp & MoveComp & PatrolComp>;
@@ -23,9 +24,8 @@ export function isGoomba(obj: GameObj): obj is Goomba {
 export interface GoombaComp extends EnemyComp {
    get type(): GoombaType;
    set type(val: GoombaType);
-   getSprite(): string;
-   setSprite(newSprite: string): void;
    getType(): GoombaType;
+   setType(val: GoombaType): void;
 }
 
 function goomba(): GoombaComp {
@@ -39,21 +39,16 @@ function goomba(): GoombaComp {
          return this.getType();
       },
       set type(val: GoombaType) {
-         const t = isGoombaType(val) ? val : GOOMBA_TYPES[0];
-         this.setSprite(`${GOOMBA_ENEMY_TAG}-${t}`);
+         this.setType(val);
       },
       getType(this: Goomba): GoombaType {
          const t = this.getCurAnim()?.name.split('-')[1] ?? GOOMBA_TYPES[0];
          if (isGoombaType(t)) return t;
          throw new Error(`Invalid goomba type: ${t}`);
       },
-      getSprite(this: Enemy): string {
-         return this.sprite;
-      },
-      setSprite(this: Goomba, newSprite: string) {
-         if (this.sprite === newSprite) return;
-         const { flipX, frame } = this;
-         this.use(k.sprite(newSprite, { frame, flipX }));
+      setType(this: Goomba, val: GoombaType) {
+         const t = isGoombaType(val) ? val : GOOMBA_TYPES[0];
+         this.setAnim(`${GOOMBA_ENEMY_TAG}-${t}`);
       },
       die(this: Enemy, player: GameObj) {
          if (player) player.trigger('collect', this);
@@ -106,6 +101,7 @@ export function makeGoomba(pos: Vec2, options = optionDefaults): Goomba {
       k.body({ maxVelocity: 1200 }),
       k.z(1),
       k.offscreen({ distance: 10000, destroy: true }),
+      general(),
       collect(),
       move(opts.move),
       patrol({ pos, ...opts.patrol }),
