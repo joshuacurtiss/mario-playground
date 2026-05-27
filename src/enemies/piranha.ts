@@ -121,7 +121,7 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
          const a = isPiranhaAction(val) ? val : '';
          this.setAnim(calcPiranhaAnim(this.kind, this.type, a));
       },
-      die(this: Piranha, player: GameObj) {
+      die(this: Piranha, player: GameObj, hitCount = 0) {
          if (player) player.trigger('collect', this);
          this.isFrozen = true;
          // Create a poof at the piranha's position
@@ -137,7 +137,7 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
                k.lifespan(0.4),
             ]);
          }
-         k.play('hit');
+         k.play('hit' + (hitCount<1 ? '' : hitCount>8 ? '8' : hitCount.toString()));
          this.trigger('die');
          this.destroy();
       },

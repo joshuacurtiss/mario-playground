@@ -50,14 +50,14 @@ function goomba(): GoombaComp {
          const t = isGoombaType(val) ? val : GOOMBA_TYPES[0];
          this.setAnim(`${GOOMBA_ENEMY_TAG}-${t}`);
       },
-      die(this: Enemy, player: GameObj) {
+      die(this: Enemy, player: GameObj, hitCount = 0) {
          if (player) player.trigger('collect', this);
          this.isFrozen = true;
          this.area.shape = new k.Rect(k.vec2(0, 0), 0, 0);
          this.vel = k.vec2(0, -200*scale);
          this.flipY = true;
          this.stop();
-         k.play('hit');
+         k.play('hit' + (hitCount<1 ? '' : hitCount>8 ? '8' : hitCount.toString()));
          this.trigger('die');
          k.wait(3, () => this.destroy());
       },

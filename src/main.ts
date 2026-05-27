@@ -49,6 +49,7 @@ import home from "./scenes/home";
 [
    '1up', 'brick-break', 'bump-block', 'checkpoint', 'coin-special', 'coin', 'course-clear',
    'course-clear-fireworks', 'die', 'fireball', 'game-over', 'hit', 'hurt', 'hurry-up',
+   'hit1', 'hit2', 'hit3', 'hit4', 'hit5', 'hit6', 'hit7', 'hit8',
    'invincible', 'jump', 'key', 'kick', 'level-enter', 'p-meter', 'pause', 'powerup-appears',
    'powerup', 'score-end', 'score', 'spin', 'skid', 'stomp', 'transform',
 ].forEach(name => {
