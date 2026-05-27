@@ -1,9 +1,10 @@
 import k, { scale } from '../../kaplayCtx';
 import { Collision, Comp, GameObj, Rect } from 'kaplay';
 import { Char } from '../index';
-import { Enemy, isEnemy } from '../../enemies';
+import { Enemy, isEnemy, isKoopa } from '../../enemies';
 import { isRect } from '../../lib/type-guards';
 import { CollectibleItem } from '../../items';
+import { KOOPA_STATE } from '../../enemies/koopa';
 
 export const powers = [ 'normal', 'fire', 'raccoon' ] as const;
 export type Power = typeof powers[number];
@@ -95,6 +96,7 @@ export interface GeneralComp extends Comp {
    updateAreaRect(): void;
    clearMovement(): void;
    die(): void;
+   kick(): void;
    hurt(): void;
    handleCollideEnemy(enemy: Enemy, col?: Collision): void;
    handleCollideCollectible(item: GameObj, col?: Collision): void;
@@ -228,6 +230,10 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          this.opacity = 1;
          this.scaleBy(1.2);
       },
+      kick(this: Char) {
+         this.play(`kick-${this.size}`);
+         k.wait(0.15, ()=>{ this.play(`walk-${this.size}`); })
+      },
       hurt(this: Char) {
          if (this.isInvulnerable) return;
          if (this.hasStarPower) return;
@@ -259,7 +265,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
             k.play('hurt');
          }
       },
-      handleCollideEnemy(this: Char, enemy, _col) {
+      handleCollideEnemy(this: Char, enemy, col) {
          if (this.isFrozen || enemy.isFrozen) return;
          const enemyIsPiranha = enemy.is('pir') || enemy.is('pirf');
          const enemyRect = enemy.area.shape && isRect(enemy.area.shape) ? enemy.area.shape : new k.Rect(k.vec2(0),0,0);
@@ -267,22 +273,30 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          const enemyPos = enemy.worldPos();
          // Validate positions exist
          if (!charPos || !enemyPos) return;
+         // Just ignore touching dormant koopa shells from the side
+         if (isKoopa(enemy) && enemy.state===KOOPA_STATE.SHELL && enemy.dir===0 && col?.normal.x) return;
          // Must hit top part of enemy  with downward velocity to stomp
          const thresholdY = enemyPos.y - enemyRect.pos.y - enemyRect.height / 2;
          // But star power comes first. Enemy just dies with no bounce if star power.
          if (this.hasStarPower) {
             enemy.die(this);
          } else if (!enemyIsPiranha && charPos.y <= thresholdY && this.vel.y > 0) {
+            if (enemy.isStomped()) return;
             jumpCombo = jumpCombo ? jumpCombo * 2 : 1;
             enemy.points = enemy.origPoints * jumpCombo;
             if (enemy.isOneUp) this.oneUp();
+            const origEnemyState = isKoopa(enemy) ? enemy.state : 0;
             enemy.stomp(this);
+            if (isKoopa(enemy) && enemy.state===origEnemyState && enemy.dir) {
+               this.kick();
+               return;
+            }
             // We wait a tick to bounce in case we stomp multiple enemies in one frame
             k.wait(0, ()=>{
                if (this.isJumping()) return;
                this.variableJump(jumpForces[this.size]*1.1);
             });
-         } else if (!this.isInvulnerable) {
+         } else if (!this.isInvulnerable && !enemy.isStomped()) {
             enemy.freeze(0.7);
             this.hurt();
          }
@@ -399,7 +413,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
          else if (this.isGrounded() && c.up && this.power !== 'raccoon') anim = 'lookup';
          // Do not interrupt certain animations until they're done. If they are set to not loop,
          // when they are done `curAnim()` will report as `null`.
-         const doNotInterruptAnims = [ 'fly', 'swipe', 'throw', 'wag' ];
+         const doNotInterruptAnims = [ 'fly', 'kick', 'swipe', 'throw', 'wag' ];
          const curAnimRoot = (this.curAnim() ?? '').split('-')[0];
          if (doNotInterruptAnims.includes(curAnimRoot)) {
             // Do not change animation or speed until current is done
