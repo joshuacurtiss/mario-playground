@@ -1,6 +1,6 @@
 import { Comp, GameObj, MergeComps } from "kaplay";
 import { scale } from "../../kaplayCtx";
-import { EnemyComps } from '../index';
+import { EnemyComps, isEnemy } from '../index';
 
 export type Dir = 1 | 0 | -1;
 
@@ -43,6 +43,7 @@ export function move(options: Partial<MoveCompOpt> = {}): MoveComp {
          });
          this.onCollideUpdate((obj, col)=>{
             if (this.isFrozen || obj.is('player')) return;
+            if (isEnemy(obj) && obj.isFrozen) return;
             if ((col?.isLeft() && this.dir<0) || (col?.isRight() && this.dir>0)) {
                // If a block triggers a collision by just a few pixels vertically, ignore it.
                if ((obj.is('block') || obj.is('brick')) && Math.abs(obj.pos.y-this.pos.y) < 10) return;
