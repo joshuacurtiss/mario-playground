@@ -211,7 +211,7 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
          // Up and down movement
          if (dir > 0 && this.pos.y >= this.height * scale) {
             if (timer <= hideTime) { timer += k.dt(); return; }
-            if (shy && pirPos && Math.abs(playerPos.y-pirPos.y) < this.height*2*scale && Math.abs(playerPos.x-pirPos.x) < this.width*0.9*scale) return;
+            if (shy && pirPos && Math.abs(playerPos.y-pirPos.y) < this.height*3.5*scale && Math.abs(playerPos.x-pirPos.x) < this.width*0.9*scale) return;
             dir = -1;
          } else if (dir < 0 && this.pos.y <= 0) {
             if (timer <= showTime) { timer += k.dt(); return; }
@@ -224,7 +224,7 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
                   k.sprite('enemies', { anim: 'fireball', flipX: !this.flipX }),
                   k.scale(scale),
                   k.area({
-                     collisionIgnore: [ 'enemy', 'immovable', 'coin', 'powerup' ],
+                     collisionIgnore: [ 'enemy', 'immovable', 'coin', 'powerup', 'fireball' ],
                      shape: new k.Rect(k.vec2(0,0),6,6),
                   }),
                   k.z(1),
@@ -234,8 +234,13 @@ function piranha(opts: Partial<PiranhaCompOpt> = {}): PiranhaComp {
                   k.offscreen({ destroy: true, distance: 100*scale }),
                   'fireball',
                ]);
-               // Set velocity of fireball to point at playerPos
-               fireball.vel = playerPos.sub(fireball.pos).unit().scale(125);
+               // Set velocity of fireball to point at player (clamped 40-130 degrees, 10 degree increments)
+               let angle = Math.round(playerPos.sub(fireball.pos).angle()/10)*10;
+               const sign = angle<0 ? -1 : 1;
+               angle = Math.abs(angle);
+               if (angle>40 && angle<90) angle = 40;
+               else if (angle>=90 && angle<130) angle = 130;
+               fireball.vel = k.Vec2.fromAngle(angle*sign).unit().scale(125);
                // Handle fireball colliding with player
                fireball.onCollide('player', (player) => {
                   if (!isChar(player) || player.isFrozen) return;
