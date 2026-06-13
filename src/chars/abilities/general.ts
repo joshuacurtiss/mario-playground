@@ -274,7 +274,7 @@ export function general(options: Partial<GeneralCompOpt> = {}): GeneralComp {
             enemy.die(this);
          } else if (!enemyIsPiranha && charPos.y <= thresholdY && this.vel.y > 0) {
             jumpCombo = jumpCombo ? jumpCombo * 2 : 1;
-            enemy.points *= jumpCombo;
+            enemy.points = enemy.origPoints * jumpCombo;
             if (enemy.isOneUp) this.oneUp();
             enemy.stomp(this);
             // We wait a tick to bounce in case we stomp multiple enemies in one frame
