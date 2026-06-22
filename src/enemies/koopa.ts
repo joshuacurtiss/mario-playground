@@ -12,6 +12,7 @@ import { Char, isChar } from "../chars";
 import { isHeadbuttable } from '../items';
 
 export const KOOPA_ENEMY_TAG = 'koopa';
+export const KOOPA_WINGS_ENEMY_TAG = 'koopawings';
 
 export const KOOPA_STATE = {
    DEAD: 0,
@@ -98,12 +99,14 @@ function koopa(): KoopaComp {
       setState(this: Koopa, newState: KoopaState) {
          _state = newState;
          if (newState === KOOPA_STATE.FLY) {
-            this.setAnim(`${KOOPA_ENEMY_TAG}-${this.type}-fly`);
+            this.tag(KOOPA_WINGS_ENEMY_TAG);
+            this.setAnim(`${KOOPA_WINGS_ENEMY_TAG}-${this.type}`);
             this.enabled = origAvoidCliff;
             this.enablePatrolling = origPatrolling;
             this.speed = origSpeed;
             this.dir = this.dir || origDir;
          } else if (newState === KOOPA_STATE.WALK) {
+            this.untag(KOOPA_WINGS_ENEMY_TAG);
             this.setAnim(`${KOOPA_ENEMY_TAG}-${this.type}`);
             this.enabled = origAvoidCliff;
             this.enablePatrolling = origPatrolling;
@@ -132,7 +135,7 @@ function koopa(): KoopaComp {
       },
       setType(this: Koopa, val: KoopaType) {
          const t = isKoopaType(val) ? val : KOOPA_TYPES[0];
-         this.setAnim(`${KOOPA_ENEMY_TAG}-${t}`);
+         this.setAnim(`${this.is(KOOPA_WINGS_ENEMY_TAG) ? KOOPA_WINGS_ENEMY_TAG : KOOPA_ENEMY_TAG}-${t}`);
       },
       die(this: Koopa, player: GameObj, hitCount = 0) {
          this.state = KOOPA_STATE.DEAD;
@@ -245,4 +248,11 @@ export function makeKoopa(pos: Vec2, options = optionDefaults): Koopa {
       'enemy',
       KOOPA_ENEMY_TAG,
    ]);
+};
+
+export function makeKoopaWithWings(pos: Vec2, options = optionDefaults): Koopa {
+   const koopa = makeKoopa(pos, options);
+   console.log('koopa with wings', options);
+   koopa.state = KOOPA_STATE.FLY;
+   return koopa;
 };
